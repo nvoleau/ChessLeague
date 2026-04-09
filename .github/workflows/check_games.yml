@@ -1,0 +1,43 @@
+name: Check Lichess Games
+
+on:
+  schedule:
+    # Every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  check-games:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run game scanner
+        env:
+          LICHESS_TOKEN: ${{ secrets.LICHESS_TOKEN }}
+        run: python scripts/check_games.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "lichess-bot"
+          git config user.email "bot@lichess-tournament-manager"
+          git add data/tournaments.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update tournament results [skip ci]"
+            git push
+          fi

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lichess Tournament Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .chess-gradient { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+    .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    .badge-pending  { background:#854d0e; color:#fef9c3; }
+    .badge-played   { background:#14532d; color:#d1fae5; }
+    .result-w { color:#4ade80; font-weight:700; }
+    .result-b { color:#f87171; font-weight:700; }
+    .result-d { color:#facc15; font-weight:700; }
+    .btn-primary { background:#2563eb; transition:background .2s; }
+    .btn-primary:hover { background:#1d4ed8; }
+    .btn-green { background:#16a34a; transition:background .2s; }
+    .btn-green:hover { background:#15803d; }
+    .btn-red { background:#dc2626; transition:background .2s; }
+    .btn-red:hover { background:#b91c1c; }
+    .tab-active { border-bottom: 2px solid #2563eb; color:#60a5fa; }
+    input, select, textarea {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      border-radius: 6px;
+      padding: 8px 12px;
+      width: 100%;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color:#2563eb; }
+    input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.4); }
+    select option { background:#1e293b; }
+    .modal-bg { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+    .rank-1 { color:#fbbf24; }
+    .rank-2 { color:#9ca3af; }
+    .rank-3 { color:#b45309; }
+    .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color:#2563eb; border-radius:50%; width:18px; height:18px; animation: spin .7s linear infinite; display:inline-block; vertical-align:middle; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .sync-ok   { color: #4ade80; }
+    .sync-err  { color: #f87171; }
+    .sync-busy { color: #facc15; }
+  </style>
+</head>
+<body class="chess-gradient min-h-screen text-white">
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+<header class="border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-10"
+        style="background:rgba(15,15,30,0.9);backdrop-filter:blur(12px)">
+  <div class="flex items-center gap-3">
+    <span class="text-2xl">♟</span>
+    <div>
+      <h1 class="font-bold text-lg leading-none">Tournament Manager</h1>
+      <p class="text-xs text-white/50">Lichess Club League</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <!-- Sync status badge -->
+    <span id="syncStatus" class="text-xs hidden"></span>
+    <div id="adminBadge" class="hidden">
+      <button onclick="logout()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition">
+        Admin ✕ Déconnexion
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     MAIN NAV TABS
+============================================================ -->
+<div class="border-b border-white/10 px-4 flex gap-1" style="background:rgba(15,15,30,0.7)">
+  <button onclick="showTab('dashboard')" id="tab-dashboard"
+          class="px-4 py-3 text-sm font-medium tab-active transition-colors">Dashboard</button>
+  <button onclick="showTab('standings')" id="tab-standings"
+          class="px-4 py-3 text-sm font-medium text-white/60 hover:text-white transition-colors">Classement</button>
+  <button onclick="showTab('admin')" id="tab-admin"
+          class="px-4 py-3 text-sm font-medium text-white/60 hover:text-white transition-colors">Admin</button>
+</div>
+
+<!-- ============================================================
+     TOURNAMENT SELECTOR
+============================================================ -->
+<div class="max-w-4xl mx-auto px-4 pt-4">
+  <div class="flex items-center gap-3">
+    <select id="tournamentSelect" onchange="selectTournament(this.value)" class="max-w-xs text-sm">
+      <option value="">Choisir un tournoi…</option>
+    </select>
+    <span id="lastUpdate" class="text-xs text-white/40"></span>
+  </div>
+</div>
+
+<!-- ============================================================
+     DASHBOARD TAB
+============================================================ -->
+<main id="view-dashboard" class="max-w-4xl mx-auto px-4 py-4">
+  <div id="noBracket" class="text-center py-16 text-white/40">
+    <p class="text-4xl mb-3">♟</p>
+    <p class="text-lg">Aucun tournoi sélectionné</p>
+    <p class="text-sm mt-1">Choisissez un tournoi dans la liste ci-dessus</p>
+  </div>
+  <div id="roundsContainer" class="hidden space-y-4"></div>
+</main>
+
+<!-- ============================================================
+     STANDINGS TAB
+============================================================ -->
+<main id="view-standings" class="hidden max-w-4xl mx-auto px-4 py-4">
+  <div id="noStandings" class="text-center py-16 text-white/40">
+    <p class="text-4xl mb-3">🏆</p>
+    <p>Aucun tournoi sélectionné</p>
+  </div>
+  <div id="standingsTable" class="hidden card rounded-xl overflow-hidden"></div>
+</main>
+
+<!-- ============================================================
+     ADMIN TAB
+============================================================ -->
+<main id="view-admin" class="hidden max-w-4xl mx-auto px-4 py-4">
+
+  <!-- Login form -->
+  <div id="adminLogin" class="card rounded-xl p-6 max-w-sm mx-auto mt-8">
+    <h2 class="text-lg font-semibold mb-4">Accès Administrateur</h2>
+    <form onsubmit="adminLogin(event)">
+      <label class="block text-sm text-white/70 mb-1">Mot de passe</label>
+      <input type="password" id="adminPasswordInput" placeholder="••••••••" class="mb-4" required />
+      <button type="submit" class="btn-primary w-full py-2 rounded-lg text-sm font-medium">Connexion</button>
+      <p id="loginError" class="text-red-400 text-xs mt-2 hidden">Mot de passe incorrect</p>
+    </form>
+  </div>
+
+  <!-- Admin panel -->
+  <div id="adminPanel" class="hidden space-y-6">
+
+    <!-- ── GitHub Sync ──────────────────────────────────────────── -->
+    <div class="card rounded-xl p-5">
+      <h2 class="text-base font-semibold mb-1 flex items-center gap-2">
+        <span>🔗</span> Synchronisation GitHub
+      </h2>
+      <p class="text-xs text-white/50 mb-4">
+        Chaque modification (créer/supprimer un tournoi, ajouter une ronde…) sera commitée
+        automatiquement dans votre repo. Le JSON mis à jour est visible par tous les joueurs
+        en quelques secondes.
+      </p>
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-white/60 mb-1">Propriétaire du repo</label>
+            <input type="text" id="ghOwner" placeholder="mon-pseudo-github" />
+          </div>
+          <div>
+            <label class="block text-xs text-white/60 mb-1">Nom du repo</label>
+            <input type="text" id="ghRepo" placeholder="chess-league" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-white/60 mb-1">
+            Personal Access Token
+            <a href="https://github.com/settings/tokens/new?description=chess-league&scopes=public_repo"
+               target="_blank" rel="noopener"
+               class="text-blue-400 hover:text-blue-300 ml-1">→ Créer sur GitHub</a>
+          </label>
+          <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+          <p class="text-xs text-white/40 mt-1">
+            Utiliser un token à portée <code class="text-yellow-300/70">public_repo</code> (repo public)
+            ou <code class="text-yellow-300/70">repo</code> (repo privé).
+            Stocké uniquement dans votre navigateur, jamais envoyé ailleurs qu'à l'API GitHub.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="saveGhConfig()" class="btn-green px-4 py-2 rounded-lg text-sm font-medium">
+            Enregistrer et tester
+          </button>
+          <button onclick="clearGhConfig()" class="px-4 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
+            Effacer
+          </button>
+        </div>
+        <div id="ghStatus" class="text-sm hidden"></div>
+      </div>
+    </div>
+
+    <!-- ── Créer un tournoi ─────────────────────────────────────── -->
+    <div class="card rounded-xl p-5">
+      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+        <span>➕</span> Créer un tournoi
+      </h2>
+      <form onsubmit="createTournament(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs text-white/60 mb-1">Nom du tournoi</label>
+          <input type="text" id="tName" placeholder="Championnat du club — Saison 2" required />
+        </div>
+        <div>
+          <label class="block text-xs text-white/60 mb-1">Cadence (ex: 10+5, 3+2, 15+10)</label>
+          <input type="text" id="tTimeControl" placeholder="10+5" pattern="\d+\+\d+"
+                 title="Format: minutes+incrément ex: 10+5" required />
+        </div>
+        <div>
+          <label class="block text-xs text-white/60 mb-1">Joueurs (un pseudo Lichess par ligne)</label>
+          <textarea id="tPlayers" rows="6" placeholder="MagnusCarlsen&#10;Hikaru&#10;GaryKasparov"
+                    class="resize-none" required
+                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);
+                           color:white;border-radius:6px;padding:8px 12px;width:100%;outline:none;"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-white/60 mb-1">Nombre de rondes</label>
+          <input type="number" id="tRounds" min="1" max="10" value="1" required />
+        </div>
+        <button type="submit" class="btn-green w-full py-2.5 rounded-lg text-sm font-semibold">
+          Générer le tournoi
+        </button>
+      </form>
+    </div>
+
+    <!-- ── Gérer tournoi sélectionné ───────────────────────────── -->
+    <div class="card rounded-xl p-5">
+      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+        <span>⚙️</span> Gérer le tournoi sélectionné
+      </h2>
+      <div id="noTournamentSelected" class="text-white/40 text-sm">
+        Sélectionnez un tournoi dans la liste ci-dessus.
+      </div>
+      <div id="adminTournamentActions" class="hidden space-y-3">
+        <p id="adminTournamentName" class="font-medium"></p>
+        <button onclick="addRound()" class="btn-primary w-full py-2 rounded-lg text-sm font-medium">
+          ➕ Ajouter une ronde
+        </button>
+        <button onclick="completeTournament()" class="btn-red w-full py-2 rounded-lg text-sm font-medium">
+          🏁 Clôturer le tournoi
+        </button>
+        <button onclick="deleteTournament()"
+                class="w-full py-2 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 transition">
+          🗑 Supprimer le tournoi
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Configuration ───────────────────────────────────────── -->
+    <div class="card rounded-xl p-5">
+      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+        <span>🔧</span> Configuration
+      </h2>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-white/60 mb-1">Nouveau mot de passe admin</label>
+          <input type="password" id="newPassword" placeholder="Laisser vide pour ne pas changer" />
+        </div>
+        <button onclick="saveConfig()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+          Sauvegarder
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Export / Import manuel ──────────────────────────────── -->
+    <div class="card rounded-xl p-5">
+      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+        <span>💾</span> Export / Import manuel
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="exportData()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+          ⬇ Exporter JSON
+        </button>
+        <label class="btn-primary px-4 py-2 rounded-lg text-sm font-medium cursor-pointer">
+          ⬆ Importer JSON
+          <input type="file" accept=".json" class="hidden" onchange="importData(event)" />
+        </label>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============================================================
+     MODAL: Challenge Link
+============================================================ -->
+<div id="challengeModal" class="hidden fixed inset-0 modal-bg flex items-center justify-center z-50 p-4">
+  <div class="card rounded-2xl p-6 w-full max-w-sm">
+    <h3 class="font-bold text-lg mb-1">Lancer un défi</h3>
+    <p id="challengeDesc" class="text-sm text-white/60 mb-4"></p>
+    <a id="challengeLink" href="#" target="_blank" rel="noopener"
+       class="btn-green block text-center py-3 rounded-xl font-semibold text-sm mb-3">
+      ♞ Ouvrir sur Lichess
+    </a>
+    <p class="text-xs text-white/40 mb-4">
+      Ce lien créera une partie privée contre votre adversaire avec la bonne cadence
+      et votre couleur. Partagez-lui le lien ou attendez qu'il vous défie.
+    </p>
+    <button onclick="closeChallengeModal()"
+            class="w-full py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
+      Fermer
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOAST NOTIFICATIONS
+============================================================ -->
+<div id="toast"
+     class="hidden fixed bottom-4 right-4 max-w-xs bg-slate-800 border border-white/20 rounded-xl px-4 py-3 text-sm shadow-xl z-50">
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let db = { config: { adminPassword: "chess2024" }, tournaments: [] };
+let currentTournamentId = null;
+let isAdmin = false;
+const DATA_URL = "data/tournaments.json";
+
+// ─── GitHub config (persisted in localStorage, never in the repo) ─────────────
+function ghConfig() {
+  try { return JSON.parse(localStorage.getItem("ltm_gh") || "{}"); }
+  catch { return {}; }
+}
+
+function ghIsConfigured() {
+  const c = ghConfig();
+  return !!(c.owner && c.repo && c.token);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  await loadData();
+  populateTournamentSelect();
+  if (db.tournaments.length > 0) {
+    selectTournament(db.tournaments[db.tournaments.length - 1].id);
+  }
+  // Auto-refresh every 60 s (picks up changes from GitHub Actions)
+  setInterval(async () => {
+    await loadData();
+    renderCurrent();
+  }, 60000);
+}
+
+async function loadData() {
+  try {
+    const r = await fetch(DATA_URL + "?_=" + Date.now());
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    db = await r.json();
+    localStorage.setItem("ltm_data", JSON.stringify(db)); // local cache
+    document.getElementById("lastUpdate").textContent =
+      "Mis à jour " + new Date().toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" });
+  } catch {
+    const saved = localStorage.getItem("ltm_data");
+    if (saved) db = JSON.parse(saved);
+  }
+}
+
+// ─── Save: localStorage + GitHub commit ──────────────────────────────────────
+async function save(commitMsg = "chore: update tournament data") {
+  localStorage.setItem("ltm_data", JSON.stringify(db));
+  if (ghIsConfigured()) {
+    await commitToGitHub(commitMsg);
+  }
+}
+
+async function commitToGitHub(message) {
+  const { owner, repo, token } = ghConfig();
+  const path = "data/tournaments.json";
+  const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const headers = {
+    Authorization: `token ${token}`,
+    Accept: "application/vnd.github+json",
+    "Content-Type": "application/json",
+  };
+
+  setSyncStatus("busy", "⟳ Synchronisation…");
+
+  try {
+    // 1. Get current SHA (required for updates)
+    let sha = null;
+    const getResp = await fetch(apiBase, { headers });
+    if (getResp.ok) {
+      sha = (await getResp.json()).sha;
+    } else if (getResp.status !== 404) {
+      throw new Error(`GET ${getResp.status}`);
+    }
+
+    // 2. Encode content as base64
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
+
+    // 3. PUT new content
+    const body = { message, content };
+    if (sha) body.sha = sha;
+    const putResp = await fetch(apiBase, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      throw new Error(err.message || `PUT ${putResp.status}`);
+    }
+
+    setSyncStatus("ok", "✓ Synchronisé sur GitHub");
+  } catch (e) {
+    setSyncStatus("err", "✕ Erreur GitHub : " + e.message);
+    showToast("Erreur de sync GitHub : " + e.message, "error");
+  }
+}
+
+function setSyncStatus(state, text) {
+  const el = document.getElementById("syncStatus");
+  el.classList.remove("hidden", "sync-ok", "sync-err", "sync-busy");
+  el.classList.add("sync-" + state);
+  el.textContent = text;
+}
+
+// ─── GitHub config UI ─────────────────────────────────────────────────────────
+function loadGhConfigUI() {
+  const c = ghConfig();
+  if (c.owner) document.getElementById("ghOwner").value = c.owner;
+  if (c.repo)  document.getElementById("ghRepo").value  = c.repo;
+  if (c.token) document.getElementById("ghToken").value = c.token;
+}
+
+async function saveGhConfig() {
+  const owner = document.getElementById("ghOwner").value.trim();
+  const repo  = document.getElementById("ghRepo").value.trim();
+  const token = document.getElementById("ghToken").value.trim();
+  const status = document.getElementById("ghStatus");
+
+  if (!owner || !repo || !token) {
+    status.className = "text-sm text-red-400";
+    status.textContent = "Veuillez remplir les trois champs.";
+    status.classList.remove("hidden");
+    return;
+  }
+
+  localStorage.setItem("ltm_gh", JSON.stringify({ owner, repo, token }));
+
+  // Test the token with a read request
+  status.className = "text-sm text-yellow-300";
+  status.textContent = "Test en cours…";
+  status.classList.remove("hidden");
+
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/data/tournaments.json`,
+      { headers: { Authorization: `token ${token}`, Accept: "application/vnd.github+json" } }
+    );
+    if (r.status === 401) throw new Error("Token invalide ou expiré.");
+    if (r.status === 403) throw new Error("Permission refusée. Vérifiez les scopes du token.");
+    if (r.status === 404) {
+      // File not found is OK (repo exists, first push)
+      const repoCheck = await fetch(`https://api.github.com/repos/${owner}/${repo}`,
+        { headers: { Authorization: `token ${token}` } });
+      if (!repoCheck.ok) throw new Error(`Repo "${owner}/${repo}" introuvable.`);
+    }
+    status.className = "text-sm text-green-400";
+    status.textContent = "✓ Connexion GitHub réussie ! Les prochaines modifications seront commitées automatiquement.";
+    showToast("GitHub configuré avec succès !");
+  } catch (e) {
+    status.className = "text-sm text-red-400";
+    status.textContent = "✕ " + e.message;
+  }
+}
+
+function clearGhConfig() {
+  localStorage.removeItem("ltm_gh");
+  document.getElementById("ghOwner").value = "";
+  document.getElementById("ghRepo").value  = "";
+  document.getElementById("ghToken").value = "";
+  const status = document.getElementById("ghStatus");
+  status.className = "text-sm text-white/40";
+  status.textContent = "Configuration GitHub effacée.";
+  status.classList.remove("hidden");
+}
+
+// ─── Tournament Select ────────────────────────────────────────────────────────
+function populateTournamentSelect() {
+  const sel = document.getElementById("tournamentSelect");
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Choisir un tournoi…</option>';
+  db.tournaments.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.name + (t.status === "completed" ? " ✓" : "");
+    sel.appendChild(opt);
+  });
+  if (prev && db.tournaments.find(t => t.id === prev)) sel.value = prev;
+}
+
+function selectTournament(id) {
+  currentTournamentId = id || null;
+  renderCurrent();
+  const t = currentTournament();
+  const actions = document.getElementById("adminTournamentActions");
+  const noSel   = document.getElementById("noTournamentSelected");
+  if (t) {
+    actions.classList.remove("hidden");
+    noSel.classList.add("hidden");
+    document.getElementById("adminTournamentName").textContent = t.name + " — " + t.timeControl;
+  } else {
+    actions.classList.add("hidden");
+    noSel.classList.remove("hidden");
+  }
+}
+
+function currentTournament() {
+  return db.tournaments.find(t => t.id === currentTournamentId) || null;
+}
+
+// ─── Render Dashboard ─────────────────────────────────────────────────────────
+function renderCurrent() {
+  renderDashboard(currentTournament());
+  renderStandings(currentTournament());
+}
+
+function renderDashboard(t) {
+  const noBracket = document.getElementById("noBracket");
+  const rounds    = document.getElementById("roundsContainer");
+  if (!t) { noBracket.classList.remove("hidden"); rounds.classList.add("hidden"); return; }
+  noBracket.classList.add("hidden");
+  rounds.classList.remove("hidden");
+
+  const [timeMin, timeInc] = parseTimeControl(t.timeControl);
+  rounds.innerHTML = t.rounds.map(round => {
+    const played = round.pairings.filter(p => p.status === "played").length;
+    return `
+      <div class="card rounded-xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+          <h3 class="font-semibold">Ronde ${round.id}</h3>
+          <span class="text-xs text-white/50">${played}/${round.pairings.length} parties jouées</span>
+        </div>
+        <div class="divide-y divide-white/5">
+          ${round.pairings.map(p => renderPairing(p, timeMin, timeInc)).join("")}
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderPairing(p, timeMin, timeInc) {
+  const badge = p.status === "played"
+    ? `<span class="badge-played text-xs px-2 py-0.5 rounded-full">Jouée</span>`
+    : `<span class="badge-pending text-xs px-2 py-0.5 rounded-full">En attente</span>`;
+
+  const result = p.result
+    ? `<span class="font-mono text-sm ${p.result==="1-0"?"result-w":p.result==="0-1"?"result-b":"result-d"}">${p.result}</span>`
+    : "";
+
+  const link = p.gameUrl
+    ? `<a href="${p.gameUrl}" target="_blank" rel="noopener"
+          class="text-xs text-blue-400 hover:text-blue-300 transition">Voir ↗</a>`
+    : "";
+
+  const buttons = p.status === "pending" ? `
+    <div class="flex gap-2 mt-2">
+      <button onclick="openChallenge('${p.white}','${p.black}','white',${timeMin},${timeInc})"
+        class="flex-1 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-green-700/50 transition">
+        ♔ Jouer Blancs
+      </button>
+      <button onclick="openChallenge('${p.white}','${p.black}','black',${timeMin},${timeInc})"
+        class="flex-1 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-green-700/50 transition">
+        ♚ Jouer Noirs
+      </button>
+    </div>` : "";
+
+  return `
+    <div class="px-4 py-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-medium"><span class="text-white/80">♔</span> ${p.white}</span>
+          <span class="text-white/40 text-xs">vs</span>
+          <span class="font-medium"><span class="text-white/40">♚</span> ${p.black}</span>
+        </div>
+        <div class="flex items-center gap-2">${result}${badge}${link}</div>
+      </div>
+      ${buttons}
+    </div>`;
+}
+
+// ─── Render Standings ─────────────────────────────────────────────────────────
+function renderStandings(t) {
+  const noSt  = document.getElementById("noStandings");
+  const table = document.getElementById("standingsTable");
+  if (!t || !t.standings?.length) {
+    noSt.classList.remove("hidden"); table.classList.add("hidden"); return;
+  }
+  noSt.classList.add("hidden");
+  table.classList.remove("hidden");
+
+  const rankIcon  = i => ["🥇","🥈","🥉"][i] ?? `${i+1}.`;
+  const rankClass = i => ["rank-1","rank-2","rank-3"][i] ?? "";
+
+  table.innerHTML = `
+    <div class="px-4 py-3 border-b border-white/10">
+      <h3 class="font-semibold">${t.name} — Classement</h3>
+      <p class="text-xs text-white/50 mt-0.5">${t.timeControl} · ${t.players.length} joueurs</p>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-white/40 border-b border-white/10">
+          <th class="text-left px-4 py-2">Rang</th>
+          <th class="text-left px-4 py-2">Joueur</th>
+          <th class="text-right px-4 py-2">Points</th>
+          <th class="text-right px-4 py-2">Parties</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        ${t.standings.map((s, i) => `
+          <tr class="hover:bg-white/5 transition">
+            <td class="px-4 py-3 ${rankClass(i)}">${rankIcon(i)}</td>
+            <td class="px-4 py-3 font-medium">${s.player}</td>
+            <td class="px-4 py-3 text-right font-mono font-bold">${fmtPts(s.points)}</td>
+            <td class="px-4 py-3 text-right text-white/50">${countGames(t, s.player)}</td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+function countGames(t, player) {
+  let n = 0;
+  for (const r of t.rounds)
+    for (const p of r.pairings)
+      if (p.status === "played" &&
+          (p.white.toLowerCase() === player.toLowerCase() ||
+           p.black.toLowerCase() === player.toLowerCase())) n++;
+  return n;
+}
+function fmtPts(pts) { return pts % 1 === 0 ? pts.toFixed(0) : pts.toFixed(1); }
+
+// ─── Challenge Modal ──────────────────────────────────────────────────────────
+function openChallenge(white, black, myColor, timeMin, timeInc) {
+  const opponent = myColor === "white" ? black : white;
+  const url = `https://lichess.org/setup/friend?user=${encodeURIComponent(opponent)}&variant=1&timeMode=1&time=${timeMin}&increment=${timeInc}&color=${myColor}`;
+  document.getElementById("challengeDesc").textContent =
+    `Vous jouez les ${myColor === "white" ? "Blancs ♔" : "Noirs ♚"} contre ${opponent}`;
+  document.getElementById("challengeLink").href = url;
+  document.getElementById("challengeModal").classList.remove("hidden");
+}
+function closeChallengeModal() {
+  document.getElementById("challengeModal").classList.add("hidden");
+}
+document.getElementById("challengeModal").addEventListener("click", function(e) {
+  if (e.target === this) closeChallengeModal();
+});
+
+// ─── Admin Auth ───────────────────────────────────────────────────────────────
+function adminLogin(e) {
+  e.preventDefault();
+  if (document.getElementById("adminPasswordInput").value === db.config.adminPassword) {
+    isAdmin = true;
+    document.getElementById("adminLogin").classList.add("hidden");
+    document.getElementById("adminPanel").classList.remove("hidden");
+    document.getElementById("adminBadge").classList.remove("hidden");
+    document.getElementById("loginError").classList.add("hidden");
+    loadGhConfigUI();
+  } else {
+    document.getElementById("loginError").classList.remove("hidden");
+  }
+}
+function logout() {
+  isAdmin = false;
+  ["adminBadge","adminPanel"].forEach(id => document.getElementById(id).classList.add("hidden"));
+  ["adminLogin"].forEach(id => document.getElementById(id).classList.remove("hidden"));
+  document.getElementById("adminPasswordInput").value = "";
+  showTab("dashboard");
+}
+
+// ─── Create Tournament ────────────────────────────────────────────────────────
+async function createTournament(e) {
+  e.preventDefault();
+  const name        = document.getElementById("tName").value.trim();
+  const timeControl = document.getElementById("tTimeControl").value.trim();
+  const playersRaw  = document.getElementById("tPlayers").value;
+  const numRounds   = parseInt(document.getElementById("tRounds").value);
+  const players     = playersRaw.split("\n").map(p => p.trim()).filter(Boolean);
+
+  if (players.length < 2) { showToast("Il faut au moins 2 joueurs.", "error"); return; }
+
+  const tournament = {
+    id: "t" + Date.now(), name, timeControl,
+    createdAt: new Date().toISOString(),
+    status: "active", players, rounds: [],
+    standings: players.map(p => ({ player: p, points: 0 }))
+  };
+  for (let i = 1; i <= numRounds; i++) tournament.rounds.push(generateRound(i, players));
+
+  db.tournaments.push(tournament);
+  await save(`feat: create tournament "${name}"`);
+  populateTournamentSelect();
+  selectTournament(tournament.id);
+  showToast(`Tournoi "${name}" créé !`);
+  e.target.reset();
+  showTab("dashboard");
+}
+
+function generateRound(roundId, players) {
+  const shuffled = [...players].sort(() => Math.random() - 0.5);
+  const pairings = [];
+  for (let i = 0; i + 1 < shuffled.length; i += 2) {
+    const flip = Math.random() > 0.5;
+    pairings.push({
+      id: "p" + Date.now() + i,
+      white: flip ? shuffled[i] : shuffled[i+1],
+      black: flip ? shuffled[i+1] : shuffled[i],
+      status: "pending", result: null, gameUrl: null, completedAt: null
+    });
+  }
+  return { id: roundId, createdAt: new Date().toISOString(), pairings };
+}
+
+// ─── Admin Actions ────────────────────────────────────────────────────────────
+async function addRound() {
+  const t = currentTournament(); if (!t) return;
+  const nextId = (t.rounds.length ? Math.max(...t.rounds.map(r => r.id)) : 0) + 1;
+  t.rounds.push(generateRound(nextId, t.players));
+  await save(`feat: add round ${nextId} to "${t.name}"`);
+  renderCurrent();
+  showToast(`Ronde ${nextId} ajoutée.`);
+}
+
+async function completeTournament() {
+  const t = currentTournament(); if (!t) return;
+  if (!confirm(`Clôturer "${t.name}" ?`)) return;
+  t.status = "completed";
+  await save(`chore: close tournament "${t.name}"`);
+  populateTournamentSelect();
+  renderCurrent();
+  showToast("Tournoi clôturé.");
+}
+
+async function deleteTournament() {
+  const t = currentTournament(); if (!t) return;
+  if (!confirm(`Supprimer "${t.name}" ?`)) return;
+  const name = t.name;
+  db.tournaments = db.tournaments.filter(x => x.id !== t.id);
+  currentTournamentId = null;
+  await save(`chore: delete tournament "${name}"`);
+  populateTournamentSelect();
+  renderCurrent();
+  showToast("Tournoi supprimé.");
+}
+
+async function saveConfig() {
+  const newPw = document.getElementById("newPassword").value;
+  if (newPw.trim()) db.config.adminPassword = newPw.trim();
+  await save("chore: update admin config");
+  document.getElementById("newPassword").value = "";
+  showToast("Configuration sauvegardée.");
+}
+
+// ─── Export / Import ──────────────────────────────────────────────────────────
+function exportData() {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], {type:"application/json"}));
+  a.download = "tournaments.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+async function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    try {
+      db = JSON.parse(ev.target.result);
+      await save("chore: import tournament data");
+      populateTournamentSelect(); renderCurrent();
+      showToast("Données importées et synchronisées !");
+    } catch { showToast("Fichier JSON invalide.", "error"); }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  ["dashboard","standings","admin"].forEach(t => {
+    document.getElementById("view-" + t).classList.toggle("hidden", t !== tab);
+    const el = document.getElementById("tab-" + t);
+    el.classList.toggle("tab-active", t === tab);
+    el.classList.toggle("text-white/60", t !== tab);
+  });
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function parseTimeControl(tc) {
+  const p = tc.replace(/\s/g,"").split("+");
+  return [parseInt(p[0])||10, parseInt(p[1])||0];
+}
+let toastTimer;
+function showToast(msg, type = "success") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `fixed bottom-4 right-4 max-w-xs rounded-xl px-4 py-3 text-sm shadow-xl z-50 border ${
+    type === "error"
+      ? "bg-red-900/80 border-red-500/30 text-red-200"
+      : "bg-slate-800 border-white/20 text-white"}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add("hidden"), 3500);
+}
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
