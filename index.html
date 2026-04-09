@@ -194,9 +194,22 @@
           <input type="text" id="tName" placeholder="Championnat du club — Saison 2" required />
         </div>
         <div>
-          <label class="block text-xs text-white/60 mb-1">Cadence (ex: 10+5, 3+2, 15+10)</label>
-          <input type="text" id="tTimeControl" placeholder="10+5" pattern="\d+\+\d+"
-                 title="Format: minutes+incrément ex: 10+5" required />
+          <label class="block text-xs text-white/60 mb-1">Description (facultatif)</label>
+          <textarea id="tDescription" rows="2" placeholder="Tournoi interne du club, format suisse, classement FFE…"
+                    class="resize-none"
+                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);
+                           color:white;border-radius:6px;padding:8px 12px;width:100%;outline:none;"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-white/60 mb-1">Cadence (ex: 10+5)</label>
+            <input type="text" id="tTimeControl" placeholder="10+5" pattern="\d+\+\d+"
+                   title="Format: minutes+incrément ex: 10+5" required />
+          </div>
+          <div>
+            <label class="block text-xs text-white/60 mb-1">Date de fin</label>
+            <input type="date" id="tEndDate" />
+          </div>
         </div>
         <div>
           <label class="block text-xs text-white/60 mb-1">Joueurs (un pseudo Lichess par ligne)</label>
@@ -519,8 +532,40 @@ function renderDashboard(t) {
   noBracket.classList.add("hidden");
   rounds.classList.remove("hidden");
 
-  const [timeMin, timeInc] = parseTimeControl(t.timeControl);
-  rounds.innerHTML = t.rounds.map(round => {
+  // Tournament header
+  const endDateHtml = t.endDate
+    ? `<span class="text-white/50">·</span>
+       <span class="text-white/60">Fin le <strong class="text-white/80">${fmtDate(t.endDate)}</strong></span>
+       ${isDue(t.endDate) ? '<span class="text-red-400 text-xs font-semibold">⚠ Délai dépassé</span>' : ''}`
+    : "";
+  const descHtml = t.description
+    ? `<p class="text-sm text-white/60 mt-1">${escHtml(t.description)}</p>` : "";
+  const pendingTotal = t.rounds.flatMap(r => r.pairings).filter(p => p.status === "pending").length;
+
+  rounds.innerHTML = `
+    <div class="card rounded-xl p-4 mb-1">
+      <div class="flex items-start gap-3">
+        <img src="logo.jpg" alt="CES" class="h-10 w-10 rounded-full object-cover border border-yellow-400/30 shrink-0 mt-0.5" />
+        <div class="min-w-0">
+          <h2 class="font-bold text-base leading-tight">${escHtml(t.name)}</h2>
+          ${descHtml}
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs">
+            <span class="text-white/60">⏱ <strong class="text-white/80">${t.timeControl}</strong></span>
+            <span class="text-white/50">·</span>
+            <span class="text-white/60">👥 <strong class="text-white/80">${t.players.length}</strong> joueurs</span>
+            <span class="text-white/50">·</span>
+            <span class="text-white/60"><strong class="text-white/80">${t.rounds.length}</strong> ronde(s)</span>
+            ${endDateHtml}
+            ${t.status === "completed"
+              ? '<span class="text-green-400 font-semibold">✓ Terminé</span>'
+              : pendingTotal > 0
+                ? `<span class="text-yellow-300">${pendingTotal} partie(s) en attente</span>`
+                : '<span class="text-green-400">Toutes les parties jouées</span>'}
+          </div>
+        </div>
+      </div>
+    </div>` +
+  t.rounds.map(round => {
     const played = round.pairings.filter(p => p.status === "played").length;
     return `
       <div class="card rounded-xl overflow-hidden">
@@ -532,7 +577,7 @@ function renderDashboard(t) {
           ${round.pairings.map(p => renderPairing(p, timeMin, timeInc)).join("")}
         </div>
       </div>`;
-  }).join("");
+  }).join("") ;
 }
 
 function renderPairing(p, timeMin, timeInc) {
@@ -667,7 +712,9 @@ function logout() {
 async function createTournament(e) {
   e.preventDefault();
   const name        = document.getElementById("tName").value.trim();
+  const description = document.getElementById("tDescription").value.trim();
   const timeControl = document.getElementById("tTimeControl").value.trim();
+  const endDate     = document.getElementById("tEndDate").value || null;
   const playersRaw  = document.getElementById("tPlayers").value;
   const numRounds   = parseInt(document.getElementById("tRounds").value);
   const players     = playersRaw.split("\n").map(p => p.trim()).filter(Boolean);
@@ -675,12 +722,13 @@ async function createTournament(e) {
   if (players.length < 2) { showToast("Il faut au moins 2 joueurs.", "error"); return; }
 
   const tournament = {
-    id: "t" + Date.now(), name, timeControl,
+    id: "t" + Date.now(), name, description, timeControl, endDate,
     createdAt: new Date().toISOString(),
     status: "active", players, rounds: [],
     standings: players.map(p => ({ player: p, points: 0 }))
   };
-  for (let i = 1; i <= numRounds; i++) tournament.rounds.push(generateRound(i, players));
+  for (let i = 1; i <= numRounds; i++)
+    tournament.rounds.push(generateRound(i, players, tournament.rounds));
 
   db.tournaments.push(tournament);
   await save(`feat: create tournament "${name}"`);
@@ -691,15 +739,37 @@ async function createTournament(e) {
   showTab("dashboard");
 }
 
-function generateRound(roundId, players) {
+function colorCounts(players, existingRounds) {
+  // Returns { player: { white: N, black: N } } from already-generated rounds
+  const counts = {};
+  players.forEach(p => { counts[p.toLowerCase()] = { white: 0, black: 0 }; });
+  for (const r of existingRounds) {
+    for (const p of r.pairings) {
+      if (counts[p.white.toLowerCase()]) counts[p.white.toLowerCase()].white++;
+      if (counts[p.black.toLowerCase()]) counts[p.black.toLowerCase()].black++;
+    }
+  }
+  return counts;
+}
+
+function generateRound(roundId, players, existingRounds = []) {
+  const counts  = colorCounts(players, existingRounds);
   const shuffled = [...players].sort(() => Math.random() - 0.5);
   const pairings = [];
   for (let i = 0; i + 1 < shuffled.length; i += 2) {
-    const flip = Math.random() > 0.5;
+    const a = shuffled[i], b = shuffled[i+1];
+    const aW = counts[a.toLowerCase()]?.white ?? 0;
+    const bW = counts[b.toLowerCase()]?.white ?? 0;
+    // Give white to whoever has played it less; flip a coin if equal
+    const aIsWhite = aW < bW ? true : aW > bW ? false : Math.random() > 0.5;
+    const white = aIsWhite ? a : b;
+    const black = aIsWhite ? b : a;
+    // Update counts so next pairings in this round are also balanced
+    counts[white.toLowerCase()].white++;
+    counts[black.toLowerCase()].black++;
     pairings.push({
       id: "p" + Date.now() + i,
-      white: flip ? shuffled[i] : shuffled[i+1],
-      black: flip ? shuffled[i+1] : shuffled[i],
+      white, black,
       status: "pending", result: null, gameUrl: null, completedAt: null
     });
   }
@@ -710,7 +780,7 @@ function generateRound(roundId, players) {
 async function addRound() {
   const t = currentTournament(); if (!t) return;
   const nextId = (t.rounds.length ? Math.max(...t.rounds.map(r => r.id)) : 0) + 1;
-  t.rounds.push(generateRound(nextId, t.players));
+  t.rounds.push(generateRound(nextId, t.players, t.rounds));
   await save(`feat: add round ${nextId} to "${t.name}"`);
   renderCurrent();
   showToast(`Ronde ${nextId} ajoutée.`);
@@ -783,6 +853,17 @@ function showTab(tab) {
 function parseTimeControl(tc) {
   const p = tc.replace(/\s/g,"").split("+");
   return [parseInt(p[0])||10, parseInt(p[1])||0];
+}
+function fmtDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+function isDue(iso) {
+  return iso && new Date(iso) < new Date();
+}
+function escHtml(s) {
+  return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 let toastTimer;
 function showToast(msg, type = "success") {
