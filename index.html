@@ -183,6 +183,41 @@
       </div>
     </div>
 
+    <!-- ── Token Lichess admin ─────────────────────────────────── -->
+    <div class="card rounded-xl p-5">
+      <h2 class="text-base font-semibold mb-1 flex items-center gap-2">
+        <span>♟</span> Token Lichess (création des défis)
+      </h2>
+      <p class="text-xs text-white/50 mb-4">
+        Un seul token suffit pour tout le club. Quand un joueur clique "Jouer cette partie",
+        l'application crée automatiquement la partie sur Lichess et génère deux liens
+        (un par joueur, avec la bonne couleur).
+      </p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-white/60 mb-1">
+            Token Lichess admin
+            <a href="https://lichess.org/account/oauth/token/create?scopes[]=challenge:write&description=ChessLeague+admin"
+               target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300 ml-1">→ Créer sur Lichess</a>
+          </label>
+          <input type="password" id="lichessAdminToken" placeholder="Collez votre token ici" autocomplete="off" />
+          <p class="text-xs text-white/40 mt-1">
+            Permission requise : <code class="text-yellow-300/70">challenge:write</code>.
+            Stocké uniquement dans votre navigateur.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="saveLichessToken()" class="btn-green px-4 py-2 rounded-lg text-sm font-medium">
+            Enregistrer et tester
+          </button>
+          <button onclick="clearLichessToken()" class="px-4 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
+            Effacer
+          </button>
+        </div>
+        <div id="lichessTokenStatus" class="text-sm hidden"></div>
+      </div>
+    </div>
+
     <!-- ── Créer un tournoi ─────────────────────────────────────── -->
     <div class="card rounded-xl p-5">
       <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
@@ -294,54 +329,52 @@
     <h3 class="font-bold text-lg mb-1">Jouer cette partie</h3>
     <p id="challengeMatchup" class="text-xs text-white/40 mb-4"></p>
 
-    <!-- Bouton Blancs -->
-    <div class="mb-3">
-      <button id="btnChallengeWhite" onclick="challengeAs('white')"
-         class="w-full flex items-center justify-between gap-3 bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition">
-        <div class="text-left">
-          <p class="font-bold text-sm">♔ <span id="challengeWhiteName"></span></p>
-          <p class="text-xs opacity-50" id="challengeTimeWhite"></p>
-        </div>
-        <span class="text-xs font-semibold opacity-60">Envoyer le défi →</span>
+    <!-- État : en attente de création -->
+    <div id="challPending">
+      <button onclick="createOpenChallenge()"
+              class="btn-green w-full py-3 rounded-xl font-semibold mb-3">
+        ⚡ Créer la partie sur Lichess
       </button>
-    </div>
-
-    <!-- Bouton Noirs -->
-    <div class="mb-4">
-      <button id="btnChallengeBlack" onclick="challengeAs('black')"
-         class="w-full flex items-center justify-between gap-3 bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition">
-        <div class="text-left">
-          <p class="font-bold text-sm">♚ <span id="challengeBlackName"></span></p>
-          <p class="text-xs opacity-40" id="challengeTimeBlack"></p>
-        </div>
-        <span class="text-xs font-semibold opacity-40">Envoyer le défi →</span>
-      </button>
-    </div>
-
-    <!-- Zone token (s'affiche si token manquant) -->
-    <div id="tokenZone" class="hidden mb-4 bg-white/5 rounded-xl p-4 space-y-2">
-      <p class="text-sm font-semibold" id="tokenZoneTitle"></p>
-      <p class="text-xs text-white/50">
-        Générez un token sur
-        <a href="https://lichess.org/account/oauth/token/create?scopes[]=challenge:write&description=ChessLeague"
-           target="_blank" class="text-blue-400 hover:underline">lichess.org</a>
-        avec la permission <code class="text-yellow-300/80">challenge:write</code>.
+      <p class="text-xs text-white/30 text-center">
+        Génère deux liens personnalisés (un par joueur)
       </p>
-      <input type="password" id="tokenInput" placeholder="lip_xxxxxxxxxxxx" class="text-sm" />
-      <button onclick="saveTokenAndChallenge()"
-              class="btn-green w-full py-2 rounded-lg text-sm font-medium">
-        Enregistrer et envoyer le défi
-      </button>
     </div>
 
-    <!-- Résultat -->
-    <div id="challengeResult" class="hidden mb-4 bg-green-900/30 border border-green-500/20 rounded-xl p-4">
-      <p class="text-sm font-semibold text-green-300 mb-2">✓ Défi envoyé !</p>
-      <p class="text-xs text-white/50 mb-2">Partagez ce lien avec votre adversaire, ou attendez sa notification Lichess :</p>
+    <!-- État : chargement -->
+    <div id="challLoading" class="hidden text-center py-4">
+      <span class="spinner"></span>
+      <p class="text-sm text-white/50 mt-2">Création en cours…</p>
+    </div>
+
+    <!-- État : succès — deux liens -->
+    <div id="challSuccess" class="hidden space-y-3 mb-4">
+      <p class="text-xs text-green-400 font-semibold">✓ Partie créée ! Chaque joueur clique sur son lien.</p>
+      <a id="challUrlWhite" href="#" target="_blank" rel="noopener"
+         class="flex items-center justify-between bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition">
+        <div>
+          <p class="font-bold text-sm">♔ <span id="challWhiteName"></span></p>
+          <p class="text-xs opacity-50">Cliquer pour rejoindre en tant que Blancs</p>
+        </div>
+        <span class="text-xs font-semibold opacity-60">Rejoindre →</span>
+      </a>
+      <a id="challUrlBlack" href="#" target="_blank" rel="noopener"
+         class="flex items-center justify-between bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition">
+        <div>
+          <p class="font-bold text-sm">♚ <span id="challBlackName"></span></p>
+          <p class="text-xs opacity-40">Cliquer pour rejoindre en tant que Noirs</p>
+        </div>
+        <span class="text-xs font-semibold opacity-40">Rejoindre →</span>
+      </a>
       <div class="flex gap-2">
-        <input id="challengeResultUrl" type="text" readonly class="text-xs flex-1 bg-white/10 border-white/20 cursor-pointer" onclick="this.select()" />
-        <button onclick="copyChallUrl()" class="btn-primary px-3 py-1.5 rounded-lg text-xs">Copier</button>
+        <button onclick="copyChallUrl('white')" class="flex-1 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 transition">Copier lien Blancs</button>
+        <button onclick="copyChallUrl('black')" class="flex-1 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 transition">Copier lien Noirs</button>
       </div>
+    </div>
+
+    <!-- État : pas de token configuré -->
+    <div id="challNoToken" class="hidden mb-4 bg-yellow-900/30 border border-yellow-500/20 rounded-xl p-4 text-xs text-yellow-200/80">
+      Aucun token Lichess configuré.<br/>
+      Allez dans <strong>Admin → Token Lichess</strong> pour en ajouter un.
     </div>
 
     <button onclick="closeChallengeModal()"
@@ -732,6 +765,7 @@ function adminLogin(e) {
     document.getElementById("adminBadge").classList.remove("hidden");
     document.getElementById("loginError").classList.add("hidden");
     loadGhConfigUI();
+    loadAdminConfigUI();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
   }
@@ -914,70 +948,41 @@ function showToast(msg, type = "success") {
 }
 
 // ─── Challenge Modal ──────────────────────────────────────────────────────────
-let _chState = {};  // current challenge context
+let _chState = {};
 
 function openChallenge(white, black, timeMin, timeInc) {
-  _chState = { white, black, timeMin, timeInc, pendingColor: null };
+  _chState = { white, black, timeMin, timeInc };
   document.getElementById("challengeMatchup").textContent =
-    `${white} (Blancs) vs ${black} (Noirs) — ${timeMin}+${timeInc}`;
-  document.getElementById("challengeWhiteName").textContent = white;
-  document.getElementById("challengeBlackName").textContent = black;
-  document.getElementById("challengeTimeWhite").textContent =
-    `Je joue les Blancs · cadence ${timeMin}+${timeInc}`;
-  document.getElementById("challengeTimeBlack").textContent =
-    `Je joue les Noirs · cadence ${timeMin}+${timeInc}`;
-  document.getElementById("tokenZone").classList.add("hidden");
-  document.getElementById("challengeResult").classList.add("hidden");
+    `${white} (♔ Blancs) vs ${black} (♚ Noirs) — ${timeMin}+${timeInc}`;
+  document.getElementById("challWhiteName").textContent = white;
+  document.getElementById("challBlackName").textContent = black;
+  challShow("pending");
   document.getElementById("challengeModal").classList.remove("hidden");
 }
 
-function challengeAs(color) {
-  const player = color === "white" ? _chState.white : _chState.black;
-  const token  = localStorage.getItem("ltm_lich_" + player.toLowerCase());
-  _chState.pendingColor = color;
-  if (!token) {
-    document.getElementById("tokenZoneTitle").textContent =
-      `Token Lichess pour ${player}`;
-    document.getElementById("tokenInput").value = "";
-    document.getElementById("tokenZone").classList.remove("hidden");
-    document.getElementById("challengeResult").classList.add("hidden");
-    document.getElementById("tokenInput").focus();
-  } else {
-    sendLichessChallenge(player, color, token);
-  }
+function challShow(state) {
+  ["pending","loading","success","noToken"].forEach(s =>
+    document.getElementById("chall" + s.charAt(0).toUpperCase() + s.slice(1))
+      .classList.toggle("hidden", s !== state)
+  );
 }
 
-async function saveTokenAndChallenge() {
-  const color  = _chState.pendingColor;
-  const player = color === "white" ? _chState.white : _chState.black;
-  const token  = document.getElementById("tokenInput").value.trim();
-  if (!token) return;
-  localStorage.setItem("ltm_lich_" + player.toLowerCase(), token);
-  document.getElementById("tokenZone").classList.add("hidden");
-  sendLichessChallenge(player, color, token);
-}
+async function createOpenChallenge() {
+  const token = localStorage.getItem("ltm_lichess_admin");
+  if (!token) { challShow("noToken"); return; }
 
-async function sendLichessChallenge(challenger, color, token) {
   const { white, black, timeMin, timeInc } = _chState;
-  const opponent = color === "white" ? black : white;
-
-  // Disable buttons during request
-  ["btnChallengeWhite","btnChallengeBlack"].forEach(id => {
-    document.getElementById(id).disabled = true;
-    document.getElementById(id).classList.add("opacity-50");
-  });
-  showToast("Envoi du défi en cours…");
+  challShow("loading");
 
   try {
     const body = new URLSearchParams({
-      rated:           "false",
-      "clock.limit":   String(timeMin * 60),
+      rated:             "false",
+      "clock.limit":     String(timeMin * 60),
       "clock.increment": String(timeInc),
-      color:           color,
-      variant:         "standard",
-      message:         `Défi tournoi CES — ${white} (♔) vs ${black} (♚)`,
+      variant:           "standard",
+      users:             `${white},${black}`,   // white first → gets white pieces
     });
-    const resp = await fetch(`https://lichess.org/api/challenge/${encodeURIComponent(opponent)}`, {
+    const resp = await fetch("https://lichess.org/api/challenge/open", {
       method:  "POST",
       headers: {
         Authorization:  `Bearer ${token}`,
@@ -987,37 +992,24 @@ async function sendLichessChallenge(challenger, color, token) {
     });
     const data = await resp.json();
     if (!resp.ok) {
-      // Token likely invalid — remove it so user can re-enter
       if (resp.status === 401) {
-        localStorage.removeItem("ltm_lich_" + challenger.toLowerCase());
-        throw new Error("Token invalide ou expiré, veuillez le ressaisir.");
+        localStorage.removeItem("ltm_lichess_admin");
+        throw new Error("Token Lichess invalide ou expiré. Reconfigurez-le dans Admin.");
       }
-      throw new Error(data?.error || `Erreur ${resp.status}`);
+      throw new Error(data?.error || `Erreur Lichess ${resp.status}`);
     }
-    const url = data.challenge?.url || `https://lichess.org/${data.challenge?.id}`;
-    document.getElementById("challengeResultUrl").value = url;
-    document.getElementById("challengeResult").classList.remove("hidden");
-    showToast("Défi envoyé !");
+    document.getElementById("challUrlWhite").href = data.urlWhite || data.challenge?.url;
+    document.getElementById("challUrlBlack").href = data.urlBlack || data.challenge?.url;
+    challShow("success");
   } catch (e) {
+    challShow("pending");
     showToast(e.message, "error");
-    // Re-show token zone if auth failed
-    if (e.message.includes("Token")) {
-      document.getElementById("tokenZoneTitle").textContent =
-        `Token Lichess pour ${challenger}`;
-      document.getElementById("tokenInput").value = "";
-      document.getElementById("tokenZone").classList.remove("hidden");
-    }
-  } finally {
-    ["btnChallengeWhite","btnChallengeBlack"].forEach(id => {
-      document.getElementById(id).disabled = false;
-      document.getElementById(id).classList.remove("opacity-50");
-    });
   }
 }
 
-function copyChallUrl() {
-  const url = document.getElementById("challengeResultUrl").value;
-  navigator.clipboard.writeText(url).then(() => showToast("Lien copié !"));
+function copyChallUrl(color) {
+  const url = document.getElementById(color === "white" ? "challUrlWhite" : "challUrlBlack").href;
+  navigator.clipboard.writeText(url).then(() => showToast("Lien " + (color === "white" ? "Blancs" : "Noirs") + " copié !"));
 }
 
 function closeChallengeModal() {
@@ -1026,6 +1018,44 @@ function closeChallengeModal() {
 document.addEventListener("click", e => {
   if (e.target.id === "challengeModal") closeChallengeModal();
 });
+
+// ─── Token Lichess admin ──────────────────────────────────────────────────────
+function loadAdminConfigUI() {
+  const t = localStorage.getItem("ltm_lichess_admin");
+  if (t) document.getElementById("lichessAdminToken").value = t;
+}
+
+async function saveLichessToken() {
+  const token  = document.getElementById("lichessAdminToken").value.trim();
+  const status = document.getElementById("lichessTokenStatus");
+  if (!token) return;
+  status.className = "text-sm text-yellow-300";
+  status.textContent = "Test en cours…";
+  status.classList.remove("hidden");
+  try {
+    const r = await fetch("https://lichess.org/api/account", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!r.ok) throw new Error(r.status === 401 ? "Token invalide." : `Erreur ${r.status}`);
+    const me = await r.json();
+    localStorage.setItem("ltm_lichess_admin", token);
+    status.className = "text-sm text-green-400";
+    status.textContent = `✓ Connecté en tant que ${me.username}. Les défis seront créés depuis ce compte.`;
+    showToast("Token Lichess enregistré !");
+  } catch (e) {
+    status.className = "text-sm text-red-400";
+    status.textContent = "✕ " + e.message;
+  }
+}
+
+function clearLichessToken() {
+  localStorage.removeItem("ltm_lichess_admin");
+  document.getElementById("lichessAdminToken").value = "";
+  const status = document.getElementById("lichessTokenStatus");
+  status.className = "text-sm text-white/40";
+  status.textContent = "Token effacé.";
+  status.classList.remove("hidden");
+}
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 init();
