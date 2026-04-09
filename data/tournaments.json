@@ -3,5 +3,137 @@
     "adminPassword": "chess2024",
     "adminLichessId": ""
   },
-  "tournaments": []
+  "tournaments": [
+    {
+      "id": "t1775737850849",
+      "name": "Test Tournoi",
+      "timeControl": "10+5",
+      "createdAt": "2026-04-09T12:30:50.849Z",
+      "status": "active",
+      "players": [
+        "jeyjeylight",
+        "nicoinca"
+      ],
+      "rounds": [
+        {
+          "id": 1,
+          "createdAt": "2026-04-09T12:30:50.849Z",
+          "pairings": [
+            {
+              "id": "p17757378508490",
+              "white": "jeyjeylight",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "createdAt": "2026-04-09T12:30:50.849Z",
+          "pairings": [
+            {
+              "id": "p17757378508490",
+              "white": "jeyjeylight",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        }
+      ],
+      "standings": [
+        {
+          "player": "jeyjeylight",
+          "points": 0
+        },
+        {
+          "player": "nicoinca",
+          "points": 0
+        }
+      ]
+    },
+    {
+      "id": "t1775743630123",
+      "name": "test 1",
+      "description": "te",
+      "timeControl": "10+5",
+      "endDate": "2026-05-03",
+      "createdAt": "2026-04-09T14:07:10.123Z",
+      "status": "active",
+      "players": [
+        "nicoinca",
+        "jeyjeylight",
+        "BaptistePDFA",
+        "Maximuspleinlecus",
+        "Karismatik49",
+        "Azery49"
+      ],
+      "rounds": [
+        {
+          "id": 1,
+          "createdAt": "2026-04-09T14:07:10.123Z",
+          "pairings": [
+            {
+              "id": "p17757436301230",
+              "white": "jeyjeylight",
+              "black": "Azery49",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p17757436301232",
+              "white": "Karismatik49",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p17757436301234",
+              "white": "BaptistePDFA",
+              "black": "Maximuspleinlecus",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        }
+      ],
+      "standings": [
+        {
+          "player": "nicoinca",
+          "points": 0
+        },
+        {
+          "player": "jeyjeylight",
+          "points": 0
+        },
+        {
+          "player": "BaptistePDFA",
+          "points": 0
+        },
+        {
+          "player": "Maximuspleinlecus",
+          "points": 0
+        },
+        {
+          "player": "Karismatik49",
+          "points": 0
+        },
+        {
+          "player": "Azery49",
+          "points": 0
+        }
+      ]
+    }
+  ]
 }
