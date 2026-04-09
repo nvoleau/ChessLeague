@@ -171,9 +171,12 @@
             Stocké uniquement dans votre navigateur, jamais envoyé ailleurs qu'à l'API GitHub.
           </p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
           <button onclick="saveGhConfig()" class="btn-green px-4 py-2 rounded-lg text-sm font-medium">
             Enregistrer et tester
+          </button>
+          <button onclick="forceSyncNow()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+            Forcer la sync
           </button>
           <button onclick="clearGhConfig()" class="px-4 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
             Effacer
@@ -461,19 +464,29 @@ async function commitToGitHub(message) {
   setSyncStatus("busy", "⟳ Synchronisation…");
 
   try {
-    // 1. Get current SHA (required for updates)
+    // 1. Récupérer le SHA actuel du fichier sur GitHub
     let sha = null;
     const getResp = await fetch(apiBase, { headers });
-    if (getResp.ok) {
+    if (getResp.status === 401) throw new Error("Token GitHub invalide ou expiré — reconfigurez-le dans Admin.");
+    if (getResp.status === 403) throw new Error("Permission refusée — vérifiez les scopes du token (public_repo ou repo).");
+    if (getResp.status === 404) {
+      // Vérifier que le repo existe
+      const repoCheck = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+      if (!repoCheck.ok) throw new Error(`Repo "${owner}/${repo}" introuvable. Vérifiez le nom dans Admin.`);
+      // Fichier n'existe pas encore → sha = null, on crée
+    } else if (!getResp.ok) {
+      throw new Error(`Erreur GitHub ${getResp.status} lors de la lecture du fichier.`);
+    } else {
       sha = (await getResp.json()).sha;
-    } else if (getResp.status !== 404) {
-      throw new Error(`GET ${getResp.status}`);
     }
 
-    // 2. Encode content as base64
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2))));
+    // 2. Encoder en base64 (compatible UTF-8)
+    const json = JSON.stringify(db, null, 2);
+    const bytes = new TextEncoder().encode(json);
+    const binStr = Array.from(bytes).map(b => String.fromCharCode(b)).join("");
+    const content = btoa(binStr);
 
-    // 3. PUT new content
+    // 3. Écrire le fichier
     const body = { message, content };
     if (sha) body.sha = sha;
     const putResp = await fetch(apiBase, {
@@ -484,14 +497,40 @@ async function commitToGitHub(message) {
 
     if (!putResp.ok) {
       const err = await putResp.json().catch(() => ({}));
-      throw new Error(err.message || `PUT ${putResp.status}`);
+      const detail = err.message || `HTTP ${putResp.status}`;
+      if (putResp.status === 409) throw new Error("Conflit de version — rechargez la page et réessayez.");
+      if (putResp.status === 422) throw new Error(`Données invalides : ${detail}`);
+      throw new Error(detail);
     }
 
-    setSyncStatus("ok", "✓ Synchronisé sur GitHub");
+    setSyncStatus("ok", "✓ Synchronisé " + new Date().toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit"}));
+
+    // Mettre à jour le statut dans la section admin si visible
+    const st = document.getElementById("ghStatus");
+    if (!st.classList.contains("hidden")) {
+      st.className = "text-sm text-green-400";
+      st.textContent = "✓ Dernière sync : " + new Date().toLocaleTimeString("fr-FR");
+    }
   } catch (e) {
-    setSyncStatus("err", "✕ Erreur GitHub : " + e.message);
-    showToast("Erreur de sync GitHub : " + e.message, "error");
+    setSyncStatus("err", "✕ " + e.message);
+    showToast(e.message, "error");
+    // Afficher aussi dans la section admin
+    const st = document.getElementById("ghStatus");
+    st.className = "text-sm text-red-400";
+    st.textContent = "✕ " + e.message;
+    st.classList.remove("hidden");
   }
+}
+
+async function forceSyncNow() {
+  if (!ghIsConfigured()) {
+    const st = document.getElementById("ghStatus");
+    st.className = "text-sm text-yellow-400";
+    st.textContent = "⚠ Aucune config GitHub. Remplissez les champs ci-dessus.";
+    st.classList.remove("hidden");
+    return;
+  }
+  await commitToGitHub("chore: force sync from admin");
 }
 
 function setSyncStatus(state, text) {
