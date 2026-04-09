@@ -541,6 +541,7 @@ function renderDashboard(t) {
   const descHtml = t.description
     ? `<p class="text-sm text-white/60 mt-1">${escHtml(t.description)}</p>` : "";
   const pendingTotal = t.rounds.flatMap(r => r.pairings).filter(p => p.status === "pending").length;
+  const [timeMin, timeInc] = parseTimeControl(t.timeControl);
 
   rounds.innerHTML = `
     <div class="card rounded-xl p-4 mb-1">
