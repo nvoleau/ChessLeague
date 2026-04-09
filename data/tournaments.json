@@ -3,5 +3,76 @@
     "adminPassword": "chess2024",
     "adminLichessId": ""
   },
-  "tournaments": []
+  "tournaments": [
+    {
+      "id": "t1775745398705",
+      "name": "Test",
+      "description": "test de tournoi",
+      "timeControl": "10+5",
+      "endDate": "2026-05-03",
+      "createdAt": "2026-04-09T14:36:38.705Z",
+      "status": "active",
+      "players": [
+        "nicoinca",
+        "jeyjeylight"
+      ],
+      "rounds": [
+        {
+          "id": 1,
+          "createdAt": "2026-04-09T14:36:38.705Z",
+          "pairings": [
+            {
+              "id": "p17757453987050",
+              "white": "jeyjeylight",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "createdAt": "2026-04-09T14:36:38.705Z",
+          "pairings": [
+            {
+              "id": "p17757453987050",
+              "white": "nicoinca",
+              "black": "jeyjeylight",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "createdAt": "2026-04-09T14:36:38.705Z",
+          "pairings": [
+            {
+              "id": "p17757453987050",
+              "white": "nicoinca",
+              "black": "jeyjeylight",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        }
+      ],
+      "standings": [
+        {
+          "player": "nicoinca",
+          "points": 0
+        },
+        {
+          "player": "jeyjeylight",
+          "points": 0
+        }
+      ]
+    }
+  ]
 }
