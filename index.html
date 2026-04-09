@@ -289,17 +289,51 @@
      MODAL: Challenge Link
 ============================================================ -->
 <div id="challengeModal" class="hidden fixed inset-0 modal-bg flex items-center justify-center z-50 p-4">
-  <div class="card rounded-2xl p-6 w-full max-w-sm">
-    <h3 class="font-bold text-lg mb-1">Lancer un défi</h3>
-    <p id="challengeDesc" class="text-sm text-white/60 mb-4"></p>
-    <a id="challengeLink" href="#" target="_blank" rel="noopener"
-       class="btn-green block text-center py-3 rounded-xl font-semibold text-sm mb-3">
-      ♞ Ouvrir sur Lichess
-    </a>
-    <p class="text-xs text-white/40 mb-4">
-      Ce lien créera une partie privée contre votre adversaire avec la bonne cadence
-      et votre couleur. Partagez-lui le lien ou attendez qu'il vous défie.
-    </p>
+  <div class="card rounded-2xl p-6 w-full max-w-md">
+    <h3 class="font-bold text-lg mb-1">Comment jouer cette partie ?</h3>
+    <p id="challengeMatchup" class="text-sm text-white/50 mb-5"></p>
+
+    <!-- Étape 1 : Blancs -->
+    <div class="mb-4">
+      <p class="text-xs font-semibold text-white/40 uppercase tracking-wide mb-2">Étape 1 — Le joueur Blancs crée le défi</p>
+      <div class="bg-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
+        <div>
+          <p class="font-semibold text-sm flex items-center gap-1.5">
+            <span class="inline-block bg-white text-gray-900 text-xs font-bold px-1.5 py-0.5 rounded">♔ Blancs</span>
+            <span id="challengeWhiteName"></span>
+          </p>
+          <p class="text-xs text-white/50 mt-0.5">Cliquez pour ouvrir Lichess et créer la partie</p>
+        </div>
+        <a id="challengeLinkWhite" href="#" target="_blank" rel="noopener"
+           class="btn-green shrink-0 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap">
+          Créer sur Lichess ↗
+        </a>
+      </div>
+    </div>
+
+    <!-- Étape 2 : Noirs -->
+    <div class="mb-5">
+      <p class="text-xs font-semibold text-white/40 uppercase tracking-wide mb-2">Étape 2 — Le joueur Noirs accepte</p>
+      <div class="bg-white/5 rounded-xl p-3 flex items-center justify-between gap-3">
+        <div>
+          <p class="font-semibold text-sm flex items-center gap-1.5">
+            <span class="inline-block bg-gray-900 border border-white/20 text-white text-xs font-bold px-1.5 py-0.5 rounded">♚ Noirs</span>
+            <span id="challengeBlackName"></span>
+          </p>
+          <p class="text-xs text-white/50 mt-0.5">Recevra une notification Lichess, ou utilisez ce lien</p>
+        </div>
+        <a id="challengeLinkBlack" href="#" target="_blank" rel="noopener"
+           class="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-white/10 hover:bg-white/20 transition whitespace-nowrap">
+          Voir sur Lichess ↗
+        </a>
+      </div>
+    </div>
+
+    <div class="bg-blue-900/30 border border-blue-500/20 rounded-lg px-3 py-2 text-xs text-blue-200/70 mb-4">
+      💡 Le joueur Blancs crée la partie sur Lichess, le joueur Noirs reçoit une notification
+      et n'a qu'à accepter. Vous pouvez aussi vous envoyer le lien par message.
+    </div>
+
     <button onclick="closeChallengeModal()"
             class="w-full py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
       Fermer
@@ -596,14 +630,10 @@ function renderPairing(p, timeMin, timeInc) {
     : "";
 
   const buttons = p.status === "pending" ? `
-    <div class="flex gap-2 mt-2">
-      <button onclick="openChallenge('${p.white}','${p.black}','white',${timeMin},${timeInc})"
-        class="flex-1 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-green-700/50 transition">
-        ♔ Jouer Blancs
-      </button>
-      <button onclick="openChallenge('${p.white}','${p.black}','black',${timeMin},${timeInc})"
-        class="flex-1 text-xs py-1.5 rounded-lg bg-white/10 hover:bg-green-700/50 transition">
-        ♚ Jouer Noirs
+    <div class="mt-2">
+      <button onclick="openChallenge('${p.white}','${p.black}',${timeMin},${timeInc})"
+        class="btn-green text-xs px-4 py-1.5 rounded-lg font-medium">
+        ▶ Jouer cette partie
       </button>
     </div>` : "";
 
@@ -682,12 +712,14 @@ function countGames(t, player) {
 function fmtPts(pts) { return pts % 1 === 0 ? pts.toFixed(0) : pts.toFixed(1); }
 
 // ─── Challenge Modal ──────────────────────────────────────────────────────────
-function openChallenge(white, black, myColor, timeMin, timeInc) {
-  const opponent = myColor === "white" ? black : white;
-  const url = `https://lichess.org/setup/friend?user=${encodeURIComponent(opponent)}&variant=1&timeMode=1&time=${timeMin}&increment=${timeInc}&color=${myColor}`;
-  document.getElementById("challengeDesc").textContent =
-    `Vous jouez les ${myColor === "white" ? "Blancs ♔" : "Noirs ♚"} contre ${opponent}`;
-  document.getElementById("challengeLink").href = url;
+function openChallenge(white, black, timeMin, timeInc) {
+  const urlWhite = `https://lichess.org/setup/friend?user=${encodeURIComponent(black)}&variant=1&timeMode=1&time=${timeMin}&increment=${timeInc}&color=white`;
+  const urlBlack = `https://lichess.org/setup/friend?user=${encodeURIComponent(white)}&variant=1&timeMode=1&time=${timeMin}&increment=${timeInc}&color=black`;
+  document.getElementById("challengeMatchup").textContent = `${white} (Blancs) contre ${black} (Noirs) — ${timeMin}+${timeInc}`;
+  document.getElementById("challengeWhiteName").textContent = white;
+  document.getElementById("challengeBlackName").textContent = black;
+  document.getElementById("challengeLinkWhite").href = urlWhite;
+  document.getElementById("challengeLinkBlack").href = urlBlack;
   document.getElementById("challengeModal").classList.remove("hidden");
 }
 function closeChallengeModal() {
