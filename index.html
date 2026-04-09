@@ -292,36 +292,59 @@
 <div id="challengeModal" class="hidden fixed inset-0 modal-bg flex items-center justify-center z-50 p-4">
   <div class="card rounded-2xl p-6 w-full max-w-sm">
     <h3 class="font-bold text-lg mb-1">Jouer cette partie</h3>
-    <p id="challengeMatchup" class="text-xs text-white/40 mb-5"></p>
+    <p id="challengeMatchup" class="text-xs text-white/40 mb-4"></p>
 
-    <p id="challengeSettings" class="hidden"></p>
-
-    <div class="space-y-3 mb-4">
-      <!-- Blancs -->
-      <a id="challengeLinkWhite" href="#" target="_blank" rel="noopener"
-         class="flex items-center justify-between gap-3 bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition">
-        <div>
+    <!-- Bouton Blancs -->
+    <div class="mb-3">
+      <button id="btnChallengeWhite" onclick="challengeAs('white')"
+         class="w-full flex items-center justify-between gap-3 bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition">
+        <div class="text-left">
           <p class="font-bold text-sm">♔ <span id="challengeWhiteName"></span></p>
           <p class="text-xs opacity-50" id="challengeTimeWhite"></p>
         </div>
-        <span class="text-xs font-semibold opacity-60">Ouvrir Lichess →</span>
-      </a>
-      <!-- Noirs -->
-      <a id="challengeLinkBlack" href="#" target="_blank" rel="noopener"
-         class="flex items-center justify-between gap-3 bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition">
-        <div>
+        <span class="text-xs font-semibold opacity-60">Envoyer le défi →</span>
+      </button>
+    </div>
+
+    <!-- Bouton Noirs -->
+    <div class="mb-4">
+      <button id="btnChallengeBlack" onclick="challengeAs('black')"
+         class="w-full flex items-center justify-between gap-3 bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition">
+        <div class="text-left">
           <p class="font-bold text-sm">♚ <span id="challengeBlackName"></span></p>
           <p class="text-xs opacity-40" id="challengeTimeBlack"></p>
         </div>
-        <span class="text-xs font-semibold opacity-40">Ouvrir Lichess →</span>
-      </a>
+        <span class="text-xs font-semibold opacity-40">Envoyer le défi →</span>
+      </button>
     </div>
 
-    <div class="bg-yellow-900/30 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-yellow-200/70 mb-4">
-      Sur Lichess, choisissez <strong>Jouer avec un ami</strong>, entrez la cadence indiquée ci-dessus et sélectionnez votre couleur. Votre adversaire recevra une notification.
+    <!-- Zone token (s'affiche si token manquant) -->
+    <div id="tokenZone" class="hidden mb-4 bg-white/5 rounded-xl p-4 space-y-2">
+      <p class="text-sm font-semibold" id="tokenZoneTitle"></p>
+      <p class="text-xs text-white/50">
+        Générez un token sur
+        <a href="https://lichess.org/account/oauth/token/create?scopes[]=challenge:write&description=ChessLeague"
+           target="_blank" class="text-blue-400 hover:underline">lichess.org</a>
+        avec la permission <code class="text-yellow-300/80">challenge:write</code>.
+      </p>
+      <input type="password" id="tokenInput" placeholder="lip_xxxxxxxxxxxx" class="text-sm" />
+      <button onclick="saveTokenAndChallenge()"
+              class="btn-green w-full py-2 rounded-lg text-sm font-medium">
+        Enregistrer et envoyer le défi
+      </button>
     </div>
 
-    <button onclick="document.getElementById('challengeModal').classList.add('hidden')"
+    <!-- Résultat -->
+    <div id="challengeResult" class="hidden mb-4 bg-green-900/30 border border-green-500/20 rounded-xl p-4">
+      <p class="text-sm font-semibold text-green-300 mb-2">✓ Défi envoyé !</p>
+      <p class="text-xs text-white/50 mb-2">Partagez ce lien avec votre adversaire, ou attendez sa notification Lichess :</p>
+      <div class="flex gap-2">
+        <input id="challengeResultUrl" type="text" readonly class="text-xs flex-1 bg-white/10 border-white/20 cursor-pointer" onclick="this.select()" />
+        <button onclick="copyChallUrl()" class="btn-primary px-3 py-1.5 rounded-lg text-xs">Copier</button>
+      </div>
+    </div>
+
+    <button onclick="closeChallengeModal()"
             class="w-full py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
       Fermer
     </button>
@@ -891,21 +914,117 @@ function showToast(msg, type = "success") {
 }
 
 // ─── Challenge Modal ──────────────────────────────────────────────────────────
+let _chState = {};  // current challenge context
+
 function openChallenge(white, black, timeMin, timeInc) {
-  const incText = timeInc > 0 ? `+${timeInc}` : "";
-  const timeLabel = `${timeMin}${incText} min`;
-  document.getElementById("challengeMatchup").textContent = `${white} (Blancs) vs ${black} (Noirs) — ${timeMin}+${timeInc}`;
+  _chState = { white, black, timeMin, timeInc, pendingColor: null };
+  document.getElementById("challengeMatchup").textContent =
+    `${white} (Blancs) vs ${black} (Noirs) — ${timeMin}+${timeInc}`;
   document.getElementById("challengeWhiteName").textContent = white;
   document.getElementById("challengeBlackName").textContent = black;
-  document.getElementById("challengeLinkWhite").href = `https://lichess.org/?user=${encodeURIComponent(black)}#friend`;
-  document.getElementById("challengeLinkBlack").href = `https://lichess.org/?user=${encodeURIComponent(white)}#friend`;
-  document.getElementById("challengeSettings").textContent = `Cadence : ${timeMin}+${timeInc} — Couleur : voir ci-dessous`;
-  document.getElementById("challengeTimeWhite").textContent = `Cadence ${timeMin}+${timeInc}, couleur : Blanc`;
-  document.getElementById("challengeTimeBlack").textContent = `Cadence ${timeMin}+${timeInc}, couleur : Noir`;
+  document.getElementById("challengeTimeWhite").textContent =
+    `Je joue les Blancs · cadence ${timeMin}+${timeInc}`;
+  document.getElementById("challengeTimeBlack").textContent =
+    `Je joue les Noirs · cadence ${timeMin}+${timeInc}`;
+  document.getElementById("tokenZone").classList.add("hidden");
+  document.getElementById("challengeResult").classList.add("hidden");
   document.getElementById("challengeModal").classList.remove("hidden");
 }
+
+function challengeAs(color) {
+  const player = color === "white" ? _chState.white : _chState.black;
+  const token  = localStorage.getItem("ltm_lich_" + player.toLowerCase());
+  _chState.pendingColor = color;
+  if (!token) {
+    document.getElementById("tokenZoneTitle").textContent =
+      `Token Lichess pour ${player}`;
+    document.getElementById("tokenInput").value = "";
+    document.getElementById("tokenZone").classList.remove("hidden");
+    document.getElementById("challengeResult").classList.add("hidden");
+    document.getElementById("tokenInput").focus();
+  } else {
+    sendLichessChallenge(player, color, token);
+  }
+}
+
+async function saveTokenAndChallenge() {
+  const color  = _chState.pendingColor;
+  const player = color === "white" ? _chState.white : _chState.black;
+  const token  = document.getElementById("tokenInput").value.trim();
+  if (!token) return;
+  localStorage.setItem("ltm_lich_" + player.toLowerCase(), token);
+  document.getElementById("tokenZone").classList.add("hidden");
+  sendLichessChallenge(player, color, token);
+}
+
+async function sendLichessChallenge(challenger, color, token) {
+  const { white, black, timeMin, timeInc } = _chState;
+  const opponent = color === "white" ? black : white;
+
+  // Disable buttons during request
+  ["btnChallengeWhite","btnChallengeBlack"].forEach(id => {
+    document.getElementById(id).disabled = true;
+    document.getElementById(id).classList.add("opacity-50");
+  });
+  showToast("Envoi du défi en cours…");
+
+  try {
+    const body = new URLSearchParams({
+      rated:           "false",
+      "clock.limit":   String(timeMin * 60),
+      "clock.increment": String(timeInc),
+      color:           color,
+      variant:         "standard",
+      message:         `Défi tournoi CES — ${white} (♔) vs ${black} (♚)`,
+    });
+    const resp = await fetch(`https://lichess.org/api/challenge/${encodeURIComponent(opponent)}`, {
+      method:  "POST",
+      headers: {
+        Authorization:  `Bearer ${token}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      // Token likely invalid — remove it so user can re-enter
+      if (resp.status === 401) {
+        localStorage.removeItem("ltm_lich_" + challenger.toLowerCase());
+        throw new Error("Token invalide ou expiré, veuillez le ressaisir.");
+      }
+      throw new Error(data?.error || `Erreur ${resp.status}`);
+    }
+    const url = data.challenge?.url || `https://lichess.org/${data.challenge?.id}`;
+    document.getElementById("challengeResultUrl").value = url;
+    document.getElementById("challengeResult").classList.remove("hidden");
+    showToast("Défi envoyé !");
+  } catch (e) {
+    showToast(e.message, "error");
+    // Re-show token zone if auth failed
+    if (e.message.includes("Token")) {
+      document.getElementById("tokenZoneTitle").textContent =
+        `Token Lichess pour ${challenger}`;
+      document.getElementById("tokenInput").value = "";
+      document.getElementById("tokenZone").classList.remove("hidden");
+    }
+  } finally {
+    ["btnChallengeWhite","btnChallengeBlack"].forEach(id => {
+      document.getElementById(id).disabled = false;
+      document.getElementById(id).classList.remove("opacity-50");
+    });
+  }
+}
+
+function copyChallUrl() {
+  const url = document.getElementById("challengeResultUrl").value;
+  navigator.clipboard.writeText(url).then(() => showToast("Lien copié !"));
+}
+
+function closeChallengeModal() {
+  document.getElementById("challengeModal").classList.add("hidden");
+}
 document.addEventListener("click", e => {
-  if (e.target.id === "challengeModal") document.getElementById("challengeModal").classList.add("hidden");
+  if (e.target.id === "challengeModal") closeChallengeModal();
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────
