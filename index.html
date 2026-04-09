@@ -266,27 +266,15 @@
       </form>
     </div>
 
-    <!-- ── Gérer tournoi sélectionné ───────────────────────────── -->
+    <!-- ── Gérer les tournois ──────────────────────────────────── -->
     <div class="card rounded-xl p-5">
       <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
-        <span>⚙️</span> Gérer le tournoi sélectionné
+        <span>⚙️</span> Gérer les tournois
       </h2>
-      <div id="noTournamentSelected" class="text-white/40 text-sm">
-        Sélectionnez un tournoi dans la liste ci-dessus.
-      </div>
-      <div id="adminTournamentActions" class="hidden space-y-3">
-        <p id="adminTournamentName" class="font-medium"></p>
-        <button onclick="addRound()" class="btn-primary w-full py-2 rounded-lg text-sm font-medium">
-          ➕ Ajouter une ronde
-        </button>
-        <button onclick="completeTournament()" class="btn-red w-full py-2 rounded-lg text-sm font-medium">
-          🏁 Clôturer le tournoi
-        </button>
-        <button onclick="deleteTournament()"
-                class="w-full py-2 rounded-lg text-sm font-medium bg-white/10 hover:bg-white/20 transition">
-          🗑 Supprimer le tournoi
-        </button>
-      </div>
+
+      <!-- Liste des tournois avec actions inline -->
+      <div id="adminTournamentList" class="space-y-2"></div>
+      <p id="adminNoTournaments" class="text-white/40 text-sm hidden">Aucun tournoi créé.</p>
     </div>
 
     <!-- ── Configuration ───────────────────────────────────────── -->
@@ -618,17 +606,60 @@ function populateTournamentSelect() {
 function selectTournament(id) {
   currentTournamentId = id || null;
   renderCurrent();
-  const t = currentTournament();
-  const actions = document.getElementById("adminTournamentActions");
-  const noSel   = document.getElementById("noTournamentSelected");
-  if (t) {
-    actions.classList.remove("hidden");
-    noSel.classList.add("hidden");
-    document.getElementById("adminTournamentName").textContent = t.name + " — " + t.timeControl;
-  } else {
-    actions.classList.add("hidden");
-    noSel.classList.remove("hidden");
+}
+
+function renderAdminTournamentList() {
+  const list  = document.getElementById("adminTournamentList");
+  const empty = document.getElementById("adminNoTournaments");
+  if (!list) return;
+  if (!db.tournaments.length) {
+    list.innerHTML = "";
+    empty.classList.remove("hidden");
+    return;
   }
+  empty.classList.add("hidden");
+  list.innerHTML = db.tournaments.map(t => {
+    const statusBadge = t.status === "completed"
+      ? `<span class="text-xs text-green-400">✓ Terminé</span>`
+      : `<span class="text-xs text-yellow-300">En cours</span>`;
+    const rounds  = t.rounds.length;
+    const pending = t.rounds.flatMap(r => r.pairings).filter(p => p.status === "pending").length;
+    return `
+      <div class="bg-white/5 border border-white/10 rounded-xl p-3">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div>
+            <p class="font-semibold text-sm">${escHtml(t.name)}</p>
+            <p class="text-xs text-white/40">${t.timeControl} · ${t.players.length} joueurs · ${rounds} ronde(s) · ${pending} en attente</p>
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="selectAndGo('${t.id}')"
+                  class="text-xs px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition">
+            👁 Voir
+          </button>
+          ${t.status !== "completed" ? `
+          <button onclick="adminAddRound('${t.id}')"
+                  class="text-xs px-3 py-1.5 rounded-lg btn-primary">
+            ➕ Ronde
+          </button>
+          <button onclick="adminComplete('${t.id}')"
+                  class="text-xs px-3 py-1.5 rounded-lg btn-red">
+            🏁 Clôturer
+          </button>` : ""}
+          <button onclick="adminDelete('${t.id}', '${escHtml(t.name).replace(/'/g,"\\\'")}')"
+                  class="text-xs px-3 py-1.5 rounded-lg bg-red-900/50 hover:bg-red-800 transition text-red-300">
+            🗑 Supprimer
+          </button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function selectAndGo(id) {
+  selectTournament(id);
+  document.getElementById("tournamentSelect").value = id;
+  showTab("dashboard");
 }
 
 function currentTournament() {
@@ -805,6 +836,7 @@ function adminLogin(e) {
     document.getElementById("loginError").classList.add("hidden");
     loadGhConfigUI();
     loadAdminConfigUI();
+    renderAdminTournamentList();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
   }
@@ -842,6 +874,7 @@ async function createTournament(e) {
   db.tournaments.push(tournament);
   await save(`feat: create tournament "${name}"`);
   populateTournamentSelect();
+  renderAdminTournamentList();
   selectTournament(tournament.id);
   showToast(`Tournoi "${name}" créé !`);
   e.target.reset();
@@ -892,29 +925,50 @@ async function addRound() {
   t.rounds.push(generateRound(nextId, t.players, t.rounds));
   await save(`feat: add round ${nextId} to "${t.name}"`);
   renderCurrent();
+  renderAdminTournamentList();
   showToast(`Ronde ${nextId} ajoutée.`);
 }
 
-async function completeTournament() {
-  const t = currentTournament(); if (!t) return;
+async function adminAddRound(id) {
+  const t = db.tournaments.find(x => x.id === id); if (!t) return;
+  const nextId = (t.rounds.length ? Math.max(...t.rounds.map(r => r.id)) : 0) + 1;
+  t.rounds.push(generateRound(nextId, t.players, t.rounds));
+  await save(`feat: add round ${nextId} to "${t.name}"`);
+  renderAdminTournamentList();
+  renderCurrent();
+  showToast(`Ronde ${nextId} ajoutée à "${t.name}".`);
+}
+
+async function adminComplete(id) {
+  const t = db.tournaments.find(x => x.id === id); if (!t) return;
   if (!confirm(`Clôturer "${t.name}" ?`)) return;
   t.status = "completed";
   await save(`chore: close tournament "${t.name}"`);
   populateTournamentSelect();
   renderCurrent();
+  renderAdminTournamentList();
   showToast("Tournoi clôturé.");
+}
+
+async function adminDelete(id, name) {
+  if (!confirm(`Supprimer "${name}" ? Cette action est irréversible.`)) return;
+  db.tournaments = db.tournaments.filter(x => x.id !== id);
+  if (currentTournamentId === id) currentTournamentId = null;
+  await save(`chore: delete tournament "${name}"`);
+  populateTournamentSelect();
+  renderCurrent();
+  renderAdminTournamentList();
+  showToast(`"${name}" supprimé.`);
+}
+
+async function completeTournament() {
+  const t = currentTournament(); if (!t) return;
+  await adminComplete(t.id);
 }
 
 async function deleteTournament() {
   const t = currentTournament(); if (!t) return;
-  if (!confirm(`Supprimer "${t.name}" ?`)) return;
-  const name = t.name;
-  db.tournaments = db.tournaments.filter(x => x.id !== t.id);
-  currentTournamentId = null;
-  await save(`chore: delete tournament "${name}"`);
-  populateTournamentSelect();
-  renderCurrent();
-  showToast("Tournoi supprimé.");
+  await adminDelete(t.id, t.name);
 }
 
 async function saveConfig() {
