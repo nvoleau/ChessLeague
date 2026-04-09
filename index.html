@@ -294,30 +294,32 @@
     <h3 class="font-bold text-lg mb-1">Jouer cette partie</h3>
     <p id="challengeMatchup" class="text-xs text-white/40 mb-5"></p>
 
-    <div class="space-y-3 mb-5">
+    <p id="challengeSettings" class="hidden"></p>
+
+    <div class="space-y-3 mb-4">
       <!-- Blancs -->
       <a id="challengeLinkWhite" href="#" target="_blank" rel="noopener"
-         class="flex items-center justify-between gap-3 bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition group">
+         class="flex items-center justify-between gap-3 bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition">
         <div>
-          <p class="font-bold text-sm" id="challengeWhiteName"></p>
-          <p class="text-xs opacity-50">Je joue les Blancs — cliquer pour créer le défi</p>
+          <p class="font-bold text-sm">♔ <span id="challengeWhiteName"></span></p>
+          <p class="text-xs opacity-50" id="challengeTimeWhite"></p>
         </div>
-        <span class="text-lg">♔ →</span>
+        <span class="text-xs font-semibold opacity-60">Ouvrir Lichess →</span>
       </a>
       <!-- Noirs -->
       <a id="challengeLinkBlack" href="#" target="_blank" rel="noopener"
-         class="flex items-center justify-between gap-3 bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition group">
+         class="flex items-center justify-between gap-3 bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition">
         <div>
-          <p class="font-bold text-sm" id="challengeBlackName"></p>
-          <p class="text-xs opacity-40">Je joue les Noirs — cliquer pour créer le défi</p>
+          <p class="font-bold text-sm">♚ <span id="challengeBlackName"></span></p>
+          <p class="text-xs opacity-40" id="challengeTimeBlack"></p>
         </div>
-        <span class="text-lg">♚ →</span>
+        <span class="text-xs font-semibold opacity-40">Ouvrir Lichess →</span>
       </a>
     </div>
 
-    <p class="text-xs text-white/30 mb-4">
-      Chaque joueur clique sur son bouton. Lichess ouvre la partie avec la bonne cadence et la bonne couleur. L'adversaire reçoit une notification et accepte.
-    </p>
+    <div class="bg-yellow-900/30 border border-yellow-500/20 rounded-lg px-3 py-2 text-xs text-yellow-200/70 mb-4">
+      Sur Lichess, choisissez <strong>Jouer avec un ami</strong>, entrez la cadence indiquée ci-dessus et sélectionnez votre couleur. Votre adversaire recevra une notification.
+    </div>
 
     <button onclick="document.getElementById('challengeModal').classList.add('hidden')"
             class="w-full py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
@@ -890,13 +892,16 @@ function showToast(msg, type = "success") {
 
 // ─── Challenge Modal ──────────────────────────────────────────────────────────
 function openChallenge(white, black, timeMin, timeInc) {
-  const urlWhite = `https://lichess.org/setup/friend?user=${encodeURIComponent(black)}&variant=1&timeMode=1&time=${timeMin}&increment=${timeInc}&color=white`;
-  const urlBlack = `https://lichess.org/setup/friend?user=${encodeURIComponent(white)}&variant=1&timeMode=1&time=${timeMin}&increment=${timeInc}&color=black`;
+  const incText = timeInc > 0 ? `+${timeInc}` : "";
+  const timeLabel = `${timeMin}${incText} min`;
   document.getElementById("challengeMatchup").textContent = `${white} (Blancs) vs ${black} (Noirs) — ${timeMin}+${timeInc}`;
-  document.getElementById("challengeWhiteName").textContent = white + " — Blancs ♔";
-  document.getElementById("challengeBlackName").textContent = black + " — Noirs ♚";
-  document.getElementById("challengeLinkWhite").href = urlWhite;
-  document.getElementById("challengeLinkBlack").href = urlBlack;
+  document.getElementById("challengeWhiteName").textContent = white;
+  document.getElementById("challengeBlackName").textContent = black;
+  document.getElementById("challengeLinkWhite").href = `https://lichess.org/?user=${encodeURIComponent(black)}#friend`;
+  document.getElementById("challengeLinkBlack").href = `https://lichess.org/?user=${encodeURIComponent(white)}#friend`;
+  document.getElementById("challengeSettings").textContent = `Cadence : ${timeMin}+${timeInc} — Couleur : voir ci-dessous`;
+  document.getElementById("challengeTimeWhite").textContent = `Cadence ${timeMin}+${timeInc}, couleur : Blanc`;
+  document.getElementById("challengeTimeBlack").textContent = `Cadence ${timeMin}+${timeInc}, couleur : Noir`;
   document.getElementById("challengeModal").classList.remove("hidden");
 }
 document.addEventListener("click", e => {
