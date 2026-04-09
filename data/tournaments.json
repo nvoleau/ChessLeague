@@ -279,6 +279,89 @@
           "points": 0
         }
       ]
+    },
+    {
+      "id": "t1775743250276",
+      "name": "test 3",
+      "description": "",
+      "timeControl": "10+5",
+      "endDate": "2026-05-03",
+      "createdAt": "2026-04-09T14:00:50.276Z",
+      "status": "active",
+      "players": [
+        "nicoinca",
+        "jeyjeylight",
+        "BaptistePDFA",
+        "Maximuspleinlecus"
+      ],
+      "rounds": [
+        {
+          "id": 1,
+          "createdAt": "2026-04-09T14:00:50.277Z",
+          "pairings": [
+            {
+              "id": "p17757432502770",
+              "white": "Maximuspleinlecus",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p17757432502772",
+              "white": "BaptistePDFA",
+              "black": "jeyjeylight",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "createdAt": "2026-04-09T14:00:50.277Z",
+          "pairings": [
+            {
+              "id": "p17757432502770",
+              "white": "nicoinca",
+              "black": "jeyjeylight",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p17757432502772",
+              "white": "BaptistePDFA",
+              "black": "Maximuspleinlecus",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        }
+      ],
+      "standings": [
+        {
+          "player": "nicoinca",
+          "points": 0
+        },
+        {
+          "player": "jeyjeylight",
+          "points": 0
+        },
+        {
+          "player": "BaptistePDFA",
+          "points": 0
+        },
+        {
+          "player": "Maximuspleinlecus",
+          "points": 0
+        }
+      ]
     }
   ]
 }
