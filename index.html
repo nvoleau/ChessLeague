@@ -610,10 +610,20 @@ function renderPairing(p, timeMin, timeInc) {
   return `
     <div class="px-4 py-3">
       <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="font-medium"><span class="text-white/80">♔</span> ${p.white}</span>
-          <span class="text-white/40 text-xs">vs</span>
-          <span class="font-medium"><span class="text-white/40">♚</span> ${p.black}</span>
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-1.5">
+            <span class="inline-flex items-center gap-1 bg-white/90 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">
+              ♔ Blancs
+            </span>
+            <span class="font-medium">${p.white}</span>
+          </div>
+          <span class="text-white/30 text-sm font-light">—</span>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-flex items-center gap-1 bg-gray-900 text-white/80 border border-white/20 text-xs font-bold px-2 py-0.5 rounded-full">
+              ♚ Noirs
+            </span>
+            <span class="font-medium">${p.black}</span>
+          </div>
         </div>
         <div class="flex items-center gap-2">${result}${badge}${link}</div>
       </div>
