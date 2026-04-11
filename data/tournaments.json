@@ -4,15 +4,30 @@
     "adminLichessId": ""
   },
   "players": {
+    "nicoinca": {
+      "lichessId": "nicoinca",
+      "firstName": "Nicolas",
+      "lastName": "Voleau"
+    },
     "jeyjeylight": {
       "lichessId": "jeyjeylight",
       "firstName": "Jérémy",
+      "lastName": "Leger"
+    },
+    "baptistePDFA": {
+      "lichessId": "BaptistePDFA",
+      "firstName": "Baptiste",
       "lastName": "Leger"
     },
     "maximuspleinlecus": {
       "lichessId": "Maximuspleinlecus",
       "firstName": "Maxime",
       "lastName": "Leger"
+    },
+    "karismatik49": {
+      "lichessId": "Karismatik49",
+      "firstName": "Cyril",
+      "lastName": "Vinet"
     },
     "azery49": {
       "lichessId": "Azery49",
@@ -23,6 +38,21 @@
       "lichessId": "Yggdrasil-PdF",
       "firstName": "Eric",
       "lastName": "Rondeau"
+    },
+    "chaballe": {
+      "lichessId": "Chaballe",
+      "firstName": "Baptiste",
+      "lastName": "Guedon"
+    },
+    "jujules85": {
+      "lichessId": "Jujules85",
+      "firstName": "Jules",
+      "lastName": "Chiron"
+    },
+    "gabinours": {
+      "lichessId": "Gabinours",
+      "firstName": "Gabin",
+      "lastName": "Chiron"
     }
   },
   "tournaments": [
@@ -101,46 +131,16 @@
       ],
       "maxRounds": 4,
       "standings": [
-        {
-          "player": "nicoinca",
-          "points": 0
-        },
-        {
-          "player": "jeyjeylight",
-          "points": 0
-        },
-        {
-          "player": "BaptistePDFA",
-          "points": 0
-        },
-        {
-          "player": "Maximuspleinlecus",
-          "points": 0
-        },
-        {
-          "player": "Karismatik49",
-          "points": 0
-        },
-        {
-          "player": "Azery49",
-          "points": 0
-        },
-        {
-          "player": "Yggdrasil-PdF",
-          "points": 0
-        },
-        {
-          "player": "Chaballe",
-          "points": 0
-        },
-        {
-          "player": "Jujules85",
-          "points": 0
-        },
-        {
-          "player": "Gabinours",
-          "points": 0
-        }
+        { "player": "nicoinca", "points": 0 },
+        { "player": "jeyjeylight", "points": 0 },
+        { "player": "BaptistePDFA", "points": 0 },
+        { "player": "Maximuspleinlecus", "points": 0 },
+        { "player": "Karismatik49", "points": 0 },
+        { "player": "Azery49", "points": 0 },
+        { "player": "Yggdrasil-PdF", "points": 0 },
+        { "player": "Chaballe", "points": 0 },
+        { "player": "Jujules85", "points": 0 },
+        { "player": "Gabinours", "points": 0 }
       ]
     }
   ]
