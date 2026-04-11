@@ -250,11 +250,42 @@
           </div>
         </div>
         <div>
-          <label class="block text-xs text-white/60 mb-1">Joueurs (un pseudo Lichess par ligne)</label>
-          <textarea id="tPlayers" rows="6" placeholder="MagnusCarlsen&#10;Hikaru&#10;GaryKasparov"
-                    class="resize-none" required
-                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);
-                           color:white;border-radius:6px;padding:8px 12px;width:100%;outline:none;"></textarea>
+          <label class="block text-xs text-white/60 mb-1">Joueurs</label>
+
+          <!-- Selected players chips -->
+          <div id="tPlayerChips" class="flex flex-wrap gap-1.5 min-h-[36px] mb-2 p-2 rounded-lg"
+               style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);">
+            <span id="tPlayerChipsEmpty" class="text-white/30 text-xs self-center">Aucun joueur sélectionné</span>
+          </div>
+
+          <!-- Pick from existing profiles -->
+          <div id="tExistingPlayersWrap" class="mb-2 hidden">
+            <p class="text-xs text-white/50 mb-1">Joueurs du club :</p>
+            <div id="tExistingPlayerBtns" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- Add new player inline -->
+          <details class="mt-1">
+            <summary class="text-xs text-blue-400 cursor-pointer select-none hover:text-blue-300">+ Nouveau joueur (pseudo + nom)</summary>
+            <div class="flex flex-wrap gap-2 mt-2 items-end">
+              <div class="flex-1 min-w-[130px]">
+                <label class="block text-xs text-white/50 mb-1">Pseudo Lichess *</label>
+                <input type="text" id="tNewLichess" placeholder="jeyjeylight" autocomplete="off" />
+              </div>
+              <div class="flex-1 min-w-[100px]">
+                <label class="block text-xs text-white/50 mb-1">Prénom</label>
+                <input type="text" id="tNewFirstName" placeholder="Jean" />
+              </div>
+              <div class="flex-1 min-w-[100px]">
+                <label class="block text-xs text-white/50 mb-1">Nom</label>
+                <input type="text" id="tNewLastName" placeholder="Dupont" />
+              </div>
+              <button type="button" onclick="tAddNewPlayer()"
+                      class="btn-primary px-3 py-2 rounded-lg text-sm whitespace-nowrap">Ajouter</button>
+            </div>
+          </details>
+          <!-- Hidden field carrying the final list -->
+          <input type="hidden" id="tPlayers" />
         </div>
         <div>
           <label class="block text-xs text-white/60 mb-1">Nombre de rondes (max)</label>
@@ -893,6 +924,7 @@ function adminLogin(e) {
     loadAdminConfigUI();
     renderAdminTournamentList();
     renderPlayerProfileList();
+    initTournamentPicker();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
   }
@@ -905,6 +937,97 @@ function logout() {
   showTab("dashboard");
 }
 
+// ─── Tournament player picker ─────────────────────────────────────────────────
+let tSelectedPlayers = []; // lichessId strings
+
+function tRefreshUI() {
+  const chips   = document.getElementById("tPlayerChips");
+  const empty   = document.getElementById("tPlayerChipsEmpty");
+  const hidden  = document.getElementById("tPlayers");
+  if (!chips) return;
+
+  // Chips
+  const chipHtml = tSelectedPlayers.map(id => {
+    const label = displayName(id) !== id ? `${displayName(id)} <span class="opacity-60">(${escHtml(id)})</span>` : escHtml(id);
+    return `<span class="inline-flex items-center gap-1 bg-blue-900/60 border border-blue-500/40 text-xs px-2 py-1 rounded-full">
+      ${label}
+      <button type="button" onclick="tRemovePlayer('${id}')" class="ml-1 text-white/50 hover:text-white leading-none">✕</button>
+    </span>`;
+  }).join("");
+  chips.innerHTML = chipHtml || "";
+  empty.classList.toggle("hidden", tSelectedPlayers.length > 0);
+  hidden.value = tSelectedPlayers.join("\n");
+
+  // Refresh existing-player buttons (grey-out already selected)
+  const btns = document.getElementById("tExistingPlayerBtns");
+  if (!btns) return;
+  btns.querySelectorAll("button[data-lid]").forEach(btn => {
+    const sel = tSelectedPlayers.includes(btn.dataset.lid);
+    btn.disabled = sel;
+    btn.classList.toggle("opacity-30", sel);
+    btn.classList.toggle("cursor-not-allowed", sel);
+  });
+}
+
+function tAddPlayer(lichessId) {
+  if (!lichessId || tSelectedPlayers.includes(lichessId)) return;
+  tSelectedPlayers.push(lichessId);
+  tRefreshUI();
+}
+
+function tRemovePlayer(lichessId) {
+  tSelectedPlayers = tSelectedPlayers.filter(p => p !== lichessId);
+  tRefreshUI();
+}
+
+function tAddNewPlayer() {
+  const lichessId = (document.getElementById("tNewLichess").value || "").trim();
+  const firstName = (document.getElementById("tNewFirstName").value || "").trim();
+  const lastName  = (document.getElementById("tNewLastName").value || "").trim();
+  if (!lichessId) { showToast("Pseudo Lichess requis.", "error"); return; }
+  // Create/update profile immediately
+  if (!db.players) db.players = {};
+  db.players[lichessId.toLowerCase()] = { lichessId, firstName, lastName };
+  // Add to selection
+  tAddPlayer(lichessId);
+  // Refresh existing-player buttons in case this was a new profile
+  tRenderExistingPlayers();
+  // Clear fields
+  document.getElementById("tNewLichess").value    = "";
+  document.getElementById("tNewFirstName").value  = "";
+  document.getElementById("tNewLastName").value   = "";
+}
+
+function tRenderExistingPlayers() {
+  const wrap = document.getElementById("tExistingPlayersWrap");
+  const btns = document.getElementById("tExistingPlayerBtns");
+  if (!wrap || !btns) return;
+  const entries = Object.entries(db.players || {});
+  if (!entries.length) { wrap.classList.add("hidden"); return; }
+  wrap.classList.remove("hidden");
+  btns.innerHTML = entries
+    .sort((a,b) => (a[1].lastName || a[0]).localeCompare(b[1].lastName || b[0]))
+    .map(([key, p]) => {
+      const label = [p.firstName, p.lastName].filter(Boolean).join(" ") || p.lichessId || key;
+      const sel   = tSelectedPlayers.includes(p.lichessId || key);
+      return `<button type="button" data-lid="${escHtml(p.lichessId || key)}"
+        onclick="tAddPlayer('${escHtml(p.lichessId || key)}')"
+        class="text-xs px-2.5 py-1 rounded-full border transition
+               ${sel ? "border-blue-500/40 bg-blue-900/40 opacity-30 cursor-not-allowed"
+                     : "border-white/20 bg-white/10 hover:bg-white/20"}"
+        ${sel ? "disabled" : ""}>
+        ${escHtml(label)}
+      </button>`;
+    }).join("");
+}
+
+// Called when admin panel becomes visible to initialise the picker
+function initTournamentPicker() {
+  tSelectedPlayers = [];
+  tRefreshUI();
+  tRenderExistingPlayers();
+}
+
 // ─── Create Tournament ────────────────────────────────────────────────────────
 async function createTournament(e) {
   e.preventDefault();
@@ -912,9 +1035,8 @@ async function createTournament(e) {
   const description = document.getElementById("tDescription").value.trim();
   const timeControl = document.getElementById("tTimeControl").value.trim();
   const endDate     = document.getElementById("tEndDate").value || null;
-  const playersRaw  = document.getElementById("tPlayers").value;
   const numRounds   = parseInt(document.getElementById("tRounds").value);
-  const players     = playersRaw.split("\n").map(p => p.trim()).filter(Boolean);
+  const players     = [...tSelectedPlayers];
 
   if (players.length < 2) { showToast("Il faut au moins 2 joueurs.", "error"); return; }
 
@@ -932,9 +1054,12 @@ async function createTournament(e) {
   await save(`feat: create tournament "${name}"`);
   populateTournamentSelect();
   renderAdminTournamentList();
+  renderPlayerProfileList();
   selectTournament(tournament.id);
   showToast(`Tournoi "${name}" créé !`);
   e.target.reset();
+  tSelectedPlayers = [];
+  tRefreshUI();
   showTab("dashboard");
 }
 
