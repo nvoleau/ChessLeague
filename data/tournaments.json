@@ -30,26 +30,17 @@
           "createdAt": "2026-04-11T10:11:39.234Z",
           "pairings": [
             {
-              "id": "p1775902299234",
-              "white": "jeyjeylight",
-              "black": "nicoinca",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
-            },
-            {
-              "id": "p1775902299235",
+              "id": "p1775950000001",
               "white": "Gabinours",
-              "black": "Jujules85",
+              "black": "Karismatik49",
               "status": "pending",
               "result": null,
               "gameUrl": null,
               "completedAt": null
             },
             {
-              "id": "p1775902299236",
-              "white": "Yggdrasil-PdF",
+              "id": "p1775950000002",
+              "white": "BaptistePDFA",
               "black": "Chaballe",
               "status": "pending",
               "result": null,
@@ -57,18 +48,27 @@
               "completedAt": null
             },
             {
-              "id": "p1775902299237",
-              "white": "Karismatik49",
-              "black": "Azery49",
+              "id": "p1775950000003",
+              "white": "Azery49",
+              "black": "jeyjeylight",
               "status": "pending",
               "result": null,
               "gameUrl": null,
               "completedAt": null
             },
             {
-              "id": "p1775902299238",
-              "white": "Maximuspleinlecus",
-              "black": "BaptistePDFA",
+              "id": "p1775950000004",
+              "white": "Jujules85",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1775950000005",
+              "white": "Yggdrasil-PdF",
+              "black": "Maximuspleinlecus",
               "status": "pending",
               "result": null,
               "gameUrl": null,
@@ -79,46 +79,16 @@
       ],
       "maxRounds": 4,
       "standings": [
-        {
-          "player": "nicoinca",
-          "points": 0
-        },
-        {
-          "player": "jeyjeylight",
-          "points": 0
-        },
-        {
-          "player": "BaptistePDFA",
-          "points": 0
-        },
-        {
-          "player": "Maximuspleinlecus",
-          "points": 0
-        },
-        {
-          "player": "Karismatik49",
-          "points": 0
-        },
-        {
-          "player": "Azery49",
-          "points": 0
-        },
-        {
-          "player": "Yggdrasil-PdF",
-          "points": 0
-        },
-        {
-          "player": "Chaballe",
-          "points": 0
-        },
-        {
-          "player": "Jujules85",
-          "points": 0
-        },
-        {
-          "player": "Gabinours",
-          "points": 0
-        }
+        { "player": "nicoinca", "points": 0 },
+        { "player": "jeyjeylight", "points": 0 },
+        { "player": "BaptistePDFA", "points": 0 },
+        { "player": "Maximuspleinlecus", "points": 0 },
+        { "player": "Karismatik49", "points": 0 },
+        { "player": "Azery49", "points": 0 },
+        { "player": "Yggdrasil-PdF", "points": 0 },
+        { "player": "Chaballe", "points": 0 },
+        { "player": "Jujules85", "points": 0 },
+        { "player": "Gabinours", "points": 0 }
       ]
     }
   ]
