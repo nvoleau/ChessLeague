@@ -117,34 +117,65 @@ def extract_result(game: dict, white_player: str) -> str | None:
         return "0.5-0.5"
 
 
+def fetch_game_by_id(game_id: str) -> dict | None:
+    """Fetch a single game directly by its Lichess ID."""
+    url = f"{LICHESS_API}/game/export/{game_id}"
+    headers = {**HEADERS, "Accept": "application/json"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=30)
+        if resp.status_code == 200:
+            return resp.json()
+        return None
+    except requests.RequestException:
+        return None
+
+
 def check_pairing(pairing: dict, round_created_at: str, clock_initial: int, clock_increment: int) -> bool:
     """
     Check a single pending pairing. Returns True if updated.
+    If challengeId is set, fetch the game directly (faster, no ambiguity).
+    Otherwise, search by opponent + timestamp.
     """
     white = pairing["white"]
     black = pairing["black"]
+    challenge_id = pairing.get("challengeId")
 
-    # Convert round creation time to milliseconds timestamp
+    print(f"  Checking {white} (W) vs {black} (B)...")
+
+    if challenge_id:
+        # Fast path: we know exactly which game to look up
+        game = fetch_game_by_id(challenge_id)
+        time.sleep(1)
+        if not game:
+            print(f"    Game {challenge_id} not found yet.")
+            return False
+        result = extract_result(game, white)
+        if result:
+            pairing["result"] = result
+            pairing["status"] = "played"
+            pairing["gameUrl"] = f"https://lichess.org/{game['id']}"
+            pairing["completedAt"] = datetime.now(timezone.utc).isoformat()
+            print(f"    Found via challengeId: {result} — {pairing['gameUrl']}")
+            return True
+        print(f"    Game {challenge_id} exists but not finished yet.")
+        return False
+
+    # Fallback: search by opponent + timestamp (no challengeId set)
     try:
         dt = datetime.fromisoformat(round_created_at.replace("Z", "+00:00"))
         since_ms = int(dt.timestamp() * 1000)
     except Exception:
         since_ms = 0
 
-    print(f"  Checking {white} (W) vs {black} (B)...")
     games = fetch_games_between(white, black, since_ms, clock_initial, clock_increment)
-    time.sleep(1)  # Be polite to the API
+    time.sleep(1)
 
     for game in games:
-        # Verify correct players
         players = game.get("players", {})
         game_white = players.get("white", {}).get("user", {}).get("id", "").lower()
         game_black = players.get("black", {}).get("user", {}).get("id", "").lower()
 
-        expected_white = white.lower()
-        expected_black = black.lower()
-
-        if game_white == expected_white and game_black == expected_black:
+        if game_white == white.lower() and game_black == black.lower():
             if not match_time_control(game, clock_initial, clock_increment):
                 continue
             result = extract_result(game, white)

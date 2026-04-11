@@ -832,7 +832,7 @@ function renderPairing(p, timeMin, timeInc, tId = "", roundId = "") {
     : "";
 
   const playBtn = p.status === "pending" ? `
-      <button onclick="openChallenge('${p.white}','${p.black}',${timeMin},${timeInc})"
+      <button onclick="openChallenge('${p.white}','${p.black}',${timeMin},${timeInc},'${tId}','${roundId}','${p.id}')"
         class="btn-green text-xs px-4 py-1.5 rounded-lg font-medium">
         ▶ Jouer
       </button>` : "";
@@ -1443,8 +1443,8 @@ function showToast(msg, type = "success") {
 // ─── Challenge Modal ──────────────────────────────────────────────────────────
 let _chState = {};
 
-function openChallenge(white, black, timeMin, timeInc) {
-  _chState = { white, black, timeMin, timeInc };
+function openChallenge(white, black, timeMin, timeInc, tId = "", roundId = "", pairingId = "") {
+  _chState = { white, black, timeMin, timeInc, tId, roundId, pairingId };
   document.getElementById("challengeMatchup").textContent =
     `${white} (♔ Blancs) vs ${black} (♚ Noirs) — ${timeMin}+${timeInc}`;
   document.getElementById("challWhiteName").textContent = white;
@@ -1494,6 +1494,18 @@ async function createOpenChallenge() {
     document.getElementById("challUrlWhite").href = data.urlWhite || data.challenge?.url;
     document.getElementById("challUrlBlack").href = data.urlBlack || data.challenge?.url;
     challShow("success");
+
+    // Save the challenge ID into the pairing so the scanner can find the game directly
+    const challengeId = data.challenge?.id;
+    if (challengeId && _chState.tId && _chState.pairingId) {
+      const t = db.tournaments.find(x => x.id === _chState.tId);
+      const round = t?.rounds.find(r => r.id == _chState.roundId);
+      const pairing = round?.pairings.find(p => p.id === _chState.pairingId);
+      if (pairing) {
+        pairing.challengeId = challengeId;
+        save("chore: save challenge id for pairing");
+      }
+    }
   } catch (e) {
     challShow("pending");
     showToast(e.message, "error");
