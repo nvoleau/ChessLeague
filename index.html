@@ -1006,7 +1006,11 @@ function tRenderExistingPlayers() {
   if (!entries.length) { wrap.classList.add("hidden"); return; }
   wrap.classList.remove("hidden");
   btns.innerHTML = entries
-    .sort((a,b) => (a[1].lastName || a[0]).localeCompare(b[1].lastName || b[0]))
+    .sort((a,b) => {
+      const na = a[1].lastName || a[1].firstName || a[0];
+      const nb = b[1].lastName || b[1].firstName || b[0];
+      return na.localeCompare(nb, "fr", { sensitivity: "base" });
+    })
     .map(([key, p]) => {
       const label = [p.firstName, p.lastName].filter(Boolean).join(" ") || p.lichessId || key;
       const sel   = tSelectedPlayers.includes(p.lichessId || key);
@@ -1301,6 +1305,7 @@ async function savePlayerProfile(e) {
   await save(`chore: update player profile ${lichessId}`);
   e.target.reset();
   renderPlayerProfileList();
+  tRenderExistingPlayers();
   renderCurrent();
   showToast(`Fiche de ${lichessId} enregistrée.`);
 }
@@ -1310,6 +1315,7 @@ async function deletePlayerProfile(lichessId) {
   delete db.players[lichessId.toLowerCase()];
   await save(`chore: delete player profile ${lichessId}`);
   renderPlayerProfileList();
+  tRenderExistingPlayers();
   renderCurrent();
   showToast(`Fiche de ${lichessId} supprimée.`);
 }
@@ -1329,7 +1335,11 @@ function renderPlayerProfileList() {
   const entries = Object.entries(db.players || {});
   if (!entries.length) { el.innerHTML = `<p class="text-xs text-white/30">Aucune fiche créée.</p>`; return; }
   el.innerHTML = entries
-    .sort((a, b) => (a[1].lastName || a[0]).localeCompare(b[1].lastName || b[0]))
+    .sort((a, b) => {
+      const na = a[1].lastName || a[1].firstName || a[0];
+      const nb = b[1].lastName || b[1].firstName || b[0];
+      return na.localeCompare(nb, "fr", { sensitivity: "base" });
+    })
     .map(([key, p]) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(" ") || "—";
       return `
