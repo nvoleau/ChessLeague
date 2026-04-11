@@ -419,11 +419,6 @@
       </div>
     </div>
 
-    <!-- État : pas de token configuré -->
-    <div id="challNoToken" class="hidden mb-4 bg-yellow-900/30 border border-yellow-500/20 rounded-xl p-4 text-xs text-yellow-200/80">
-      Aucun token Lichess configuré.<br/>
-      Allez dans <strong>Admin → Token Lichess</strong> pour en ajouter un.
-    </div>
 
     <button onclick="closeChallengeModal()"
             class="w-full py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
@@ -1454,15 +1449,14 @@ function openChallenge(white, black, timeMin, timeInc, tId = "", roundId = "", p
 }
 
 function challShow(state) {
-  ["pending","loading","success","noToken"].forEach(s =>
+  ["pending","loading","success"].forEach(s =>
     document.getElementById("chall" + s.charAt(0).toUpperCase() + s.slice(1))
       .classList.toggle("hidden", s !== state)
   );
 }
 
 async function createOpenChallenge() {
-  const token = localStorage.getItem("ltm_lichess_admin");
-  if (!token) { challShow("noToken"); return; }
+  const token = localStorage.getItem("ltm_lichess_admin"); // optional — improves rate limits
 
   const { white, black, timeMin, timeInc } = _chState;
   challShow("loading");
@@ -1475,12 +1469,11 @@ async function createOpenChallenge() {
       variant:           "standard",
       users:             `${white},${black}`,   // white first → gets white pieces
     });
+    const headers = { "Content-Type": "application/x-www-form-urlencoded" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     const resp = await fetch("https://lichess.org/api/challenge/open", {
-      method:  "POST",
-      headers: {
-        Authorization:  `Bearer ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
+      method: "POST",
+      headers,
       body,
     });
     const data = await resp.json();
