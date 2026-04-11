@@ -168,6 +168,11 @@ def update_standings(tournament: dict):
         for pairing in round_.get("pairings", []):
             if pairing["status"] != "played":
                 continue
+            # Bye pairing: white gets 1 point automatically
+            if pairing.get("black") == "BYE":
+                white = pairing["white"].lower()
+                scores[white] = scores.get(white, 0) + 1.0
+                continue
             result = pairing.get("result")
             white = pairing["white"].lower()
             black = pairing["black"].lower()

@@ -257,8 +257,8 @@
                            color:white;border-radius:6px;padding:8px 12px;width:100%;outline:none;"></textarea>
         </div>
         <div>
-          <label class="block text-xs text-white/60 mb-1">Nombre de rondes</label>
-          <input type="number" id="tRounds" min="1" max="10" value="1" required />
+          <label class="block text-xs text-white/60 mb-1">Nombre de rondes (max)</label>
+          <input type="number" id="tRounds" min="1" max="15" value="5" required />
         </div>
         <button type="submit" class="btn-green w-full py-2.5 rounded-lg text-sm font-semibold">
           Générer le tournoi
@@ -623,13 +623,15 @@ function renderAdminTournamentList() {
       ? `<span class="text-xs text-green-400">✓ Terminé</span>`
       : `<span class="text-xs text-yellow-300">En cours</span>`;
     const rounds  = t.rounds.length;
+    const maxR    = t.maxRounds || "?";
     const pending = t.rounds.flatMap(r => r.pairings).filter(p => p.status === "pending").length;
+    const canAddRound = t.status !== "completed" && rounds < (t.maxRounds || 99);
     return `
       <div class="bg-white/5 border border-white/10 rounded-xl p-3">
         <div class="flex items-start justify-between gap-2 mb-2">
           <div>
             <p class="font-semibold text-sm">${escHtml(t.name)}</p>
-            <p class="text-xs text-white/40">${t.timeControl} · ${t.players.length} joueurs · ${rounds} ronde(s) · ${pending} en attente</p>
+            <p class="text-xs text-white/40">${t.timeControl} · ${t.players.length} joueurs · Ronde ${rounds}/${maxR} · ${pending} en attente</p>
           </div>
           ${statusBadge}
         </div>
@@ -639,9 +641,13 @@ function renderAdminTournamentList() {
             👁 Voir
           </button>
           ${t.status !== "completed" ? `
-          <button onclick="adminAddRound('${t.id}')"
+          ${canAddRound ? `<button onclick="adminAddRound('${t.id}')"
                   class="text-xs px-3 py-1.5 rounded-lg btn-primary">
-            ➕ Ronde
+            ➕ Ronde suisse
+          </button>` : `<span class="text-xs text-white/30 px-2 py-1.5">Rondes max atteintes</span>`}
+          <button onclick="adminComplete('${t.id}')"
+                  class="text-xs px-3 py-1.5 rounded-lg btn-red">
+            🏁 Clôturer
           </button>
           <button onclick="adminComplete('${t.id}')"
                   class="text-xs px-3 py-1.5 rounded-lg btn-red">
@@ -702,7 +708,7 @@ function renderDashboard(t) {
             <span class="text-white/50">·</span>
             <span class="text-white/60">👥 <strong class="text-white/80">${t.players.length}</strong> joueurs</span>
             <span class="text-white/50">·</span>
-            <span class="text-white/60"><strong class="text-white/80">${t.rounds.length}</strong> ronde(s)</span>
+            <span class="text-white/60">Ronde <strong class="text-white/80">${t.rounds.length}${t.maxRounds ? "/"+t.maxRounds : ""}</strong></span>
             ${endDateHtml}
             ${t.status === "completed"
               ? '<span class="text-green-400 font-semibold">✓ Terminé</span>'
@@ -729,6 +735,28 @@ function renderDashboard(t) {
 }
 
 function renderPairing(p, timeMin, timeInc, tId = "", roundId = "") {
+  // BYE: special display
+  if (p.black === "BYE") {
+    const deleteBtn = isAdmin && tId ? `
+      <button onclick="adminDeletePairing('${tId}','${roundId}','${p.id}')"
+        class="text-xs px-2 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-800/60 text-red-300 transition"
+        title="Supprimer ce bye">🗑</button>` : "";
+    return `
+    <div class="px-4 py-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-white/60 text-sm">🎁 Bye —</span>
+          <span class="font-medium">${p.white}</span>
+          <span class="text-xs text-white/40">(+1 pt automatique)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="badge-played text-xs px-2 py-0.5 rounded-full">Exempt</span>
+          ${deleteBtn}
+        </div>
+      </div>
+    </div>`;
+  }
+
   const badge = p.status === "played"
     ? `<span class="badge-played text-xs px-2 py-0.5 rounded-full">Jouée</span>`
     : `<span class="badge-pending text-xs px-2 py-0.5 rounded-full">En attente</span>`;
@@ -867,10 +895,11 @@ async function createTournament(e) {
     id: "t" + Date.now(), name, description, timeControl, endDate,
     createdAt: new Date().toISOString(),
     status: "active", players, rounds: [],
+    maxRounds: numRounds,
     standings: players.map(p => ({ player: p, points: 0 }))
   };
-  for (let i = 1; i <= numRounds; i++)
-    tournament.rounds.push(generateRound(i, players, tournament.rounds));
+  // Swiss: only generate round 1 (random). Subsequent rounds generated from real scores.
+  tournament.rounds.push(generateRound(1, players, []));
 
   db.tournaments.push(tournament);
   await save(`feat: create tournament "${name}"`);
@@ -882,12 +911,14 @@ async function createTournament(e) {
   showTab("dashboard");
 }
 
+// ─── Swiss pairing helpers ────────────────────────────────────────────────────
+
 function colorCounts(players, existingRounds) {
-  // Returns { player: { white: N, black: N } } from already-generated rounds
   const counts = {};
   players.forEach(p => { counts[p.toLowerCase()] = { white: 0, black: 0 }; });
   for (const r of existingRounds) {
     for (const p of r.pairings) {
+      if (p.black === "BYE") continue;
       if (counts[p.white.toLowerCase()]) counts[p.white.toLowerCase()].white++;
       if (counts[p.black.toLowerCase()]) counts[p.black.toLowerCase()].black++;
     }
@@ -895,27 +926,116 @@ function colorCounts(players, existingRounds) {
   return counts;
 }
 
+function swissScores(players, existingRounds) {
+  const sc = {};
+  players.forEach(p => sc[p.toLowerCase()] = 0);
+  for (const r of existingRounds) {
+    for (const p of r.pairings) {
+      if (p.status !== "played") continue;
+      if (p.black === "BYE") { sc[p.white.toLowerCase()] = (sc[p.white.toLowerCase()] || 0) + 1; continue; }
+      const w = p.white.toLowerCase(), b = p.black.toLowerCase();
+      if (p.result === "1-0")        sc[w] = (sc[w] || 0) + 1;
+      else if (p.result === "0-1")   sc[b] = (sc[b] || 0) + 1;
+      else if (p.result === "0.5-0.5") { sc[w] = (sc[w] || 0) + 0.5; sc[b] = (sc[b] || 0) + 0.5; }
+    }
+  }
+  return sc;
+}
+
+function playedPairs(existingRounds) {
+  const set = new Set();
+  for (const r of existingRounds)
+    for (const p of r.pairings)
+      if (p.black !== "BYE") set.add([p.white, p.black].map(x => x.toLowerCase()).sort().join("|"));
+  return set;
+}
+
+function byePlayers(existingRounds) {
+  const set = new Set();
+  for (const r of existingRounds)
+    for (const p of r.pairings)
+      if (p.black === "BYE") set.add(p.white.toLowerCase());
+  return set;
+}
+
 function generateRound(roundId, players, existingRounds = []) {
-  const counts  = colorCounts(players, existingRounds);
-  const shuffled = [...players].sort(() => Math.random() - 0.5);
+  const counts = colorCounts(players, existingRounds);
+  const isFirst = existingRounds.length === 0;
+
+  // Sort by score desc (random tiebreak). Round 1: pure random.
+  let sorted;
+  if (isFirst) {
+    sorted = [...players].sort(() => Math.random() - 0.5);
+  } else {
+    const sc = swissScores(players, existingRounds);
+    sorted = [...players].sort((a, b) => {
+      const d = (sc[b.toLowerCase()] || 0) - (sc[a.toLowerCase()] || 0);
+      return d !== 0 ? d : Math.random() - 0.5;
+    });
+  }
+
+  // Handle bye for odd player count
+  let byePlayer = null;
+  let active = sorted;
+  if (sorted.length % 2 !== 0) {
+    const hadBye = byePlayers(existingRounds);
+    // Give bye to lowest-ranked player who hasn't had one yet
+    byePlayer = [...sorted].reverse().find(p => !hadBye.has(p.toLowerCase()))
+                || sorted[sorted.length - 1];
+    active = sorted.filter(p => p !== byePlayer);
+  }
+
+  // Greedy Swiss pairing: pair adjacent players by score, avoid rematches
+  const already = isFirst ? new Set() : playedPairs(existingRounds);
+  const used = new Set();
+  const pairs = [];
+
+  for (let i = 0; i < active.length; i++) {
+    if (used.has(i)) continue;
+    // Find nearest unpaired player we haven't faced
+    let j = -1;
+    for (let k = i + 1; k < active.length; k++) {
+      if (used.has(k)) continue;
+      const key = [active[i], active[k]].map(x => x.toLowerCase()).sort().join("|");
+      if (!already.has(key)) { j = k; break; }
+    }
+    // Fallback: allow rematch if no fresh opponent available
+    if (j === -1) {
+      for (let k = i + 1; k < active.length; k++) {
+        if (!used.has(k)) { j = k; break; }
+      }
+    }
+    if (j !== -1) { used.add(i); used.add(j); pairs.push([active[i], active[j]]); }
+  }
+
   const pairings = [];
-  for (let i = 0; i + 1 < shuffled.length; i += 2) {
-    const a = shuffled[i], b = shuffled[i+1];
+
+  // Bye pairing (auto-played, 1 point)
+  if (byePlayer) {
+    pairings.push({
+      id: "p" + Date.now() + "bye",
+      white: byePlayer, black: "BYE",
+      status: "played", result: "1-0", gameUrl: null,
+      completedAt: new Date().toISOString()
+    });
+  }
+
+  // Assign colors (balance across tournament)
+  for (let i = 0; i < pairs.length; i++) {
+    const [a, b] = pairs[i];
     const aW = counts[a.toLowerCase()]?.white ?? 0;
     const bW = counts[b.toLowerCase()]?.white ?? 0;
-    // Give white to whoever has played it less; flip a coin if equal
     const aIsWhite = aW < bW ? true : aW > bW ? false : Math.random() > 0.5;
-    const white = aIsWhite ? a : b;
-    const black = aIsWhite ? b : a;
-    // Update counts so next pairings in this round are also balanced
+    const white = aIsWhite ? a : b, black = aIsWhite ? b : a;
     counts[white.toLowerCase()].white++;
     counts[black.toLowerCase()].black++;
     pairings.push({
-      id: "p" + Date.now() + i,
+      id: "p" + (Date.now() + i),
       white, black,
       status: "pending", result: null, gameUrl: null, completedAt: null
     });
   }
+
   return { id: roundId, createdAt: new Date().toISOString(), pairings };
 }
 
@@ -978,6 +1098,7 @@ function recalcStandings(t) {
   for (const round of t.rounds) {
     for (const p of round.pairings) {
       if (p.status !== "played") continue;
+      if (p.black === "BYE") { scores[p.white.toLowerCase()] = (scores[p.white.toLowerCase()] || 0) + 1; continue; }
       const w = p.white.toLowerCase(), b = p.black.toLowerCase();
       if (p.result === "1-0")       scores[w] = (scores[w] || 0) + 1;
       else if (p.result === "0-1")  scores[b] = (scores[b] || 0) + 1;
