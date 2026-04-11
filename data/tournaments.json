@@ -4,10 +4,10 @@
     "adminLichessId": ""
   },
   "players": {
-    "nicoinca": {
-      "lichessId": "nicoinca",
-      "firstName": "Nicolas",
-      "lastName": "Voleau"
+    "jeyjeylight": {
+      "lichessId": "jeyjeylight",
+      "firstName": "Jérémy",
+      "lastName": "Leger"
     }
   },
   "tournaments": [
