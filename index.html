@@ -488,15 +488,19 @@ async function loadData() {
   }
 }
 
-// ─── Save: localStorage + GitHub commit ──────────────────────────────────────
-async function save(commitMsg = "chore: update tournament data") {
+// ─── Save: localStorage + GitHub commit (serialized queue) ───────────────────
+let _saveQueue = Promise.resolve();
+function save(commitMsg = "chore: update tournament data") {
   localStorage.setItem("ltm_data", JSON.stringify(db));
   if (ghIsConfigured()) {
-    await commitToGitHub(commitMsg);
+    // Capture db state NOW (not when the queue runs)
+    const snapshot = JSON.stringify(db, null, 2);
+    _saveQueue = _saveQueue.then(() => commitToGitHub(commitMsg, snapshot));
   }
+  return _saveQueue;
 }
 
-async function commitToGitHub(message) {
+async function commitToGitHub(message, jsonSnapshot) {
   const { owner, repo, token } = ghConfig();
   const path = "data/tournaments.json";
   const apiBase = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
@@ -526,7 +530,7 @@ async function commitToGitHub(message) {
     }
 
     // 2. Encoder en base64 (compatible UTF-8)
-    const json = JSON.stringify(db, null, 2);
+    const json = jsonSnapshot || JSON.stringify(db, null, 2);
     const bytes = new TextEncoder().encode(json);
     const binStr = Array.from(bytes).map(b => String.fromCharCode(b)).join("");
     const content = btoa(binStr);
