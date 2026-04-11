@@ -14,20 +14,10 @@
       "firstName": "Maxime",
       "lastName": "Leger"
     },
-    "nicoinca": {
-      "lichessId": "nicoinca",
-      "firstName": "Nicolas",
-      "lastName": "Voleau"
-    },
-    "baptistepdfa": {
-      "lichessId": "BaptistePDFA",
-      "firstName": "Baptiste",
-      "lastName": "Leger"
-    },
-    "karismatik49": {
-      "lichessId": "Karismatik49",
-      "firstName": "Cyril",
-      "lastName": "Vinet"
+    "azery49": {
+      "lichessId": "Azery49",
+      "firstName": "Pierre",
+      "lastName": "Chupin"
     }
   },
   "tournaments": [
