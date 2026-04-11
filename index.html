@@ -277,6 +277,32 @@
       <p id="adminNoTournaments" class="text-white/40 text-sm hidden">Aucun tournoi créé.</p>
     </div>
 
+    <!-- ── Fiches joueurs ────────────────────────────────────────── -->
+    <div class="card rounded-xl p-5">
+      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+        <span>👤</span> Fiches joueurs
+      </h2>
+      <p class="text-xs text-white/50 mb-3">Associez un vrai nom à chaque pseudo Lichess. Il s'affichera dans le dashboard et le classement.</p>
+      <form onsubmit="savePlayerProfile(event)" class="flex flex-wrap gap-2 mb-4 items-end">
+        <div class="flex-1 min-w-[140px]">
+          <label class="block text-xs text-white/60 mb-1">Pseudo Lichess</label>
+          <input type="text" id="ppLichess" placeholder="jeyjeylight" autocomplete="off" required />
+        </div>
+        <div class="flex-1 min-w-[120px]">
+          <label class="block text-xs text-white/60 mb-1">Prénom</label>
+          <input type="text" id="ppFirstName" placeholder="Jean" />
+        </div>
+        <div class="flex-1 min-w-[120px]">
+          <label class="block text-xs text-white/60 mb-1">Nom</label>
+          <input type="text" id="ppLastName" placeholder="Dupont" />
+        </div>
+        <button type="submit" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
+          Enregistrer
+        </button>
+      </form>
+      <div id="playerProfileList" class="space-y-1"></div>
+    </div>
+
     <!-- ── Configuration ───────────────────────────────────────── -->
     <div class="card rounded-xl p-5">
       <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
@@ -387,7 +413,7 @@
 ============================================================ -->
 <script>
 // ─── State ───────────────────────────────────────────────────────────────────
-let db = { config: { adminPassword: "chess2024" }, tournaments: [] };
+let db = { config: { adminPassword: "chess2024" }, players: {}, tournaments: [] };
 let currentTournamentId = null;
 let isAdmin = false;
 const DATA_URL = "data/tournaments.json";
@@ -746,7 +772,7 @@ function renderPairing(p, timeMin, timeInc, tId = "", roundId = "") {
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2">
           <span class="text-white/60 text-sm">🎁 Bye —</span>
-          <span class="font-medium">${p.white}</span>
+          <span class="font-medium">${playerTag(p.white)}</span>
           <span class="text-xs text-white/40">(+1 pt automatique)</span>
         </div>
         <div class="flex items-center gap-2">
@@ -789,12 +815,12 @@ function renderPairing(p, timeMin, timeInc, tId = "", roundId = "") {
         <div class="flex items-center gap-3 flex-wrap">
           <div class="flex items-center gap-1.5">
             <span class="inline-flex items-center gap-1 bg-white/90 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">♔ Blancs</span>
-            <span class="font-medium">${p.white}</span>
+            <span class="font-medium">${playerTag(p.white)}</span>
           </div>
           <span class="text-white/30 text-sm font-light">—</span>
           <div class="flex items-center gap-1.5">
             <span class="inline-flex items-center gap-1 bg-gray-900 text-white/80 border border-white/20 text-xs font-bold px-2 py-0.5 rounded-full">♚ Noirs</span>
-            <span class="font-medium">${p.black}</span>
+            <span class="font-medium">${playerTag(p.black)}</span>
           </div>
         </div>
         <div class="flex items-center gap-2">${result}${badge}${link}${deleteBtn}</div>
@@ -834,7 +860,7 @@ function renderStandings(t) {
         ${t.standings.map((s, i) => `
           <tr class="hover:bg-white/5 transition">
             <td class="px-4 py-3 ${rankClass(i)}">${rankIcon(i)}</td>
-            <td class="px-4 py-3 font-medium">${s.player}</td>
+            <td class="px-4 py-3 font-medium">${playerTag(s.player)}</td>
             <td class="px-4 py-3 text-right font-mono font-bold">${fmtPts(s.points)}</td>
             <td class="px-4 py-3 text-right text-white/50">${countGames(t, s.player)}</td>
           </tr>`).join("")}
@@ -866,6 +892,7 @@ function adminLogin(e) {
     loadGhConfigUI();
     loadAdminConfigUI();
     renderAdminTournamentList();
+    renderPlayerProfileList();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
   }
@@ -1137,6 +1164,65 @@ async function saveConfig() {
   showToast("Configuration sauvegardée.");
 }
 
+// ─── Player profiles ──────────────────────────────────────────────────────────
+async function savePlayerProfile(e) {
+  e.preventDefault();
+  const lichessId = document.getElementById("ppLichess").value.trim();
+  const firstName = document.getElementById("ppFirstName").value.trim();
+  const lastName  = document.getElementById("ppLastName").value.trim();
+  if (!lichessId) return;
+  if (!db.players) db.players = {};
+  db.players[lichessId.toLowerCase()] = { lichessId, firstName, lastName };
+  await save(`chore: update player profile ${lichessId}`);
+  e.target.reset();
+  renderPlayerProfileList();
+  renderCurrent();
+  showToast(`Fiche de ${lichessId} enregistrée.`);
+}
+
+async function deletePlayerProfile(lichessId) {
+  if (!db.players) return;
+  delete db.players[lichessId.toLowerCase()];
+  await save(`chore: delete player profile ${lichessId}`);
+  renderPlayerProfileList();
+  renderCurrent();
+  showToast(`Fiche de ${lichessId} supprimée.`);
+}
+
+function editPlayerProfile(lichessId) {
+  const p = (db.players || {})[lichessId.toLowerCase()];
+  if (!p) return;
+  document.getElementById("ppLichess").value    = p.lichessId || lichessId;
+  document.getElementById("ppFirstName").value  = p.firstName || "";
+  document.getElementById("ppLastName").value   = p.lastName  || "";
+  document.getElementById("ppLichess").focus();
+}
+
+function renderPlayerProfileList() {
+  const el = document.getElementById("playerProfileList");
+  if (!el) return;
+  const entries = Object.entries(db.players || {});
+  if (!entries.length) { el.innerHTML = `<p class="text-xs text-white/30">Aucune fiche créée.</p>`; return; }
+  el.innerHTML = entries
+    .sort((a, b) => (a[1].lastName || a[0]).localeCompare(b[1].lastName || b[0]))
+    .map(([key, p]) => {
+      const name = [p.firstName, p.lastName].filter(Boolean).join(" ") || "—";
+      return `
+      <div class="flex items-center justify-between gap-2 py-1.5 border-b border-white/5">
+        <div>
+          <span class="text-sm font-medium">${escHtml(name)}</span>
+          <span class="text-xs text-white/40 ml-2">${escHtml(p.lichessId || key)}</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="editPlayerProfile('${key}')"
+                  class="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition">✏️</button>
+          <button onclick="deletePlayerProfile('${key}')"
+                  class="text-xs px-2 py-1 rounded bg-red-900/40 hover:bg-red-800/60 text-red-300 transition">🗑</button>
+        </div>
+      </div>`;
+    }).join("");
+}
+
 // ─── Export / Import ──────────────────────────────────────────────────────────
 function exportData() {
   const a = document.createElement("a");
@@ -1185,6 +1271,23 @@ function isDue(iso) {
 }
 function escHtml(s) {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─── Player profiles ──────────────────────────────────────────────────────────
+function displayName(lichessId) {
+  if (!lichessId || lichessId === "BYE") return lichessId;
+  const p = (db.players || {})[lichessId.toLowerCase()];
+  if (!p) return lichessId;
+  const parts = [p.firstName, p.lastName].filter(Boolean);
+  return parts.length ? parts.join(" ") : lichessId;
+}
+function playerTag(lichessId) {
+  // Returns "Prénom NOM (pseudo)" or just "pseudo" if no profile
+  if (!lichessId || lichessId === "BYE") return lichessId;
+  const p = (db.players || {})[lichessId.toLowerCase()];
+  if (!p || (!p.firstName && !p.lastName)) return escHtml(lichessId);
+  const name = [p.firstName, p.lastName].filter(Boolean).join(" ");
+  return `${escHtml(name)} <span class="text-white/40 text-xs">(${escHtml(lichessId)})</span>`;
 }
 let toastTimer;
 function showToast(msg, type = "success") {

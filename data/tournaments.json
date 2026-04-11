@@ -3,6 +3,7 @@
     "adminPassword": "chess2024",
     "adminLichessId": ""
   },
+  "players": {},
   "tournaments": [
     {
       "id": "t1775902299234",
