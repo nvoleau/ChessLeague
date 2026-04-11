@@ -962,10 +962,14 @@ function generateRound(roundId, players, existingRounds = []) {
   const counts = colorCounts(players, existingRounds);
   const isFirst = existingRounds.length === 0;
 
-  // Sort by score desc (random tiebreak). Round 1: pure random.
+  // Sort by score desc (random tiebreak). Round 1: pure Fisher-Yates shuffle.
   let sorted;
   if (isFirst) {
-    sorted = [...players].sort(() => Math.random() - 0.5);
+    sorted = [...players];
+    for (let i = sorted.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
+    }
   } else {
     const sc = swissScores(players, existingRounds);
     sorted = [...players].sort((a, b) => {
