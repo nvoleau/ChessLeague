@@ -3,7 +3,13 @@
     "adminPassword": "chess2024",
     "adminLichessId": ""
   },
-  "players": {},
+  "players": {
+    "nicoinca": {
+      "lichessId": "nicoinca",
+      "firstName": "Nicolas",
+      "lastName": "Voleau"
+    }
+  },
   "tournaments": [
     {
       "id": "t1775902299234",
@@ -80,16 +86,46 @@
       ],
       "maxRounds": 4,
       "standings": [
-        { "player": "nicoinca", "points": 0 },
-        { "player": "jeyjeylight", "points": 0 },
-        { "player": "BaptistePDFA", "points": 0 },
-        { "player": "Maximuspleinlecus", "points": 0 },
-        { "player": "Karismatik49", "points": 0 },
-        { "player": "Azery49", "points": 0 },
-        { "player": "Yggdrasil-PdF", "points": 0 },
-        { "player": "Chaballe", "points": 0 },
-        { "player": "Jujules85", "points": 0 },
-        { "player": "Gabinours", "points": 0 }
+        {
+          "player": "nicoinca",
+          "points": 0
+        },
+        {
+          "player": "jeyjeylight",
+          "points": 0
+        },
+        {
+          "player": "BaptistePDFA",
+          "points": 0
+        },
+        {
+          "player": "Maximuspleinlecus",
+          "points": 0
+        },
+        {
+          "player": "Karismatik49",
+          "points": 0
+        },
+        {
+          "player": "Azery49",
+          "points": 0
+        },
+        {
+          "player": "Yggdrasil-PdF",
+          "points": 0
+        },
+        {
+          "player": "Chaballe",
+          "points": 0
+        },
+        {
+          "player": "Jujules85",
+          "points": 0
+        },
+        {
+          "player": "Gabinours",
+          "points": 0
+        }
       ]
     }
   ]
