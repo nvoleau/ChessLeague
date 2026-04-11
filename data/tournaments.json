@@ -4,19 +4,14 @@
     "adminLichessId": ""
   },
   "players": {
-    "nicoinca": {
-      "lichessId": "nicoinca",
-      "firstName": "Nicolas",
-      "lastName": "Voleau"
-    },
-    "baptistepdfa": {
-      "lichessId": "BaptistePDFA",
-      "firstName": "Baptiste",
-      "lastName": "Leger"
-    },
     "jeyjeylight": {
       "lichessId": "jeyjeylight",
-      "firstName": "Jeremy",
+      "firstName": "Jérémy",
+      "lastName": "Leger"
+    },
+    "maximuspleinlecus": {
+      "lichessId": "Maximuspleinlecus",
+      "firstName": "Maxime",
       "lastName": "Leger"
     }
   },
