@@ -103,10 +103,10 @@
               "id": "p1775950000003",
               "white": "Azery49",
               "black": "jeyjeylight",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/F2ZBwvnf",
+              "completedAt": "2026-04-11T19:30:50.698701+00:00"
             },
             {
               "id": "p1775950000004",
@@ -131,16 +131,46 @@
       ],
       "maxRounds": 4,
       "standings": [
-        { "player": "nicoinca", "points": 0 },
-        { "player": "jeyjeylight", "points": 0 },
-        { "player": "BaptistePDFA", "points": 0 },
-        { "player": "Maximuspleinlecus", "points": 0 },
-        { "player": "Karismatik49", "points": 0 },
-        { "player": "Azery49", "points": 0 },
-        { "player": "Yggdrasil-PdF", "points": 0 },
-        { "player": "Chaballe", "points": 0 },
-        { "player": "Jujules85", "points": 0 },
-        { "player": "Gabinours", "points": 0 }
+        {
+          "player": "jeyjeylight",
+          "points": 1.0
+        },
+        {
+          "player": "nicoinca",
+          "points": 0.0
+        },
+        {
+          "player": "BaptistePDFA",
+          "points": 0.0
+        },
+        {
+          "player": "Maximuspleinlecus",
+          "points": 0.0
+        },
+        {
+          "player": "Karismatik49",
+          "points": 0.0
+        },
+        {
+          "player": "Azery49",
+          "points": 0.0
+        },
+        {
+          "player": "Yggdrasil-PdF",
+          "points": 0.0
+        },
+        {
+          "player": "Chaballe",
+          "points": 0.0
+        },
+        {
+          "player": "Jujules85",
+          "points": 0.0
+        },
+        {
+          "player": "Gabinours",
+          "points": 0.0
+        }
       ]
     }
   ]
