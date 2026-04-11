@@ -3,5 +3,123 @@
     "adminPassword": "chess2024",
     "adminLichessId": ""
   },
-  "tournaments": []
+  "tournaments": [
+    {
+      "id": "t1775902299234",
+      "name": "tournoi C.E.S online Avril 2026",
+      "description": "Format Suisse",
+      "timeControl": "10+5",
+      "endDate": "2026-04-30",
+      "createdAt": "2026-04-11T10:11:39.234Z",
+      "status": "active",
+      "players": [
+        "nicoinca",
+        "jeyjeylight",
+        "BaptistePDFA",
+        "Maximuspleinlecus",
+        "Karismatik49",
+        "Azery49",
+        "Yggdrasil-PdF",
+        "Chaballe",
+        "Jujules85",
+        "Gabinours"
+      ],
+      "rounds": [
+        {
+          "id": 1,
+          "createdAt": "2026-04-11T10:11:39.234Z",
+          "pairings": [
+            {
+              "id": "p1775902299234",
+              "white": "jeyjeylight",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1775902299235",
+              "white": "Gabinours",
+              "black": "Jujules85",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1775902299236",
+              "white": "Yggdrasil-PdF",
+              "black": "Chaballe",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1775902299237",
+              "white": "Karismatik49",
+              "black": "Azery49",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1775902299238",
+              "white": "Maximuspleinlecus",
+              "black": "BaptistePDFA",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
+        }
+      ],
+      "maxRounds": 4,
+      "standings": [
+        {
+          "player": "nicoinca",
+          "points": 0
+        },
+        {
+          "player": "jeyjeylight",
+          "points": 0
+        },
+        {
+          "player": "BaptistePDFA",
+          "points": 0
+        },
+        {
+          "player": "Maximuspleinlecus",
+          "points": 0
+        },
+        {
+          "player": "Karismatik49",
+          "points": 0
+        },
+        {
+          "player": "Azery49",
+          "points": 0
+        },
+        {
+          "player": "Yggdrasil-PdF",
+          "points": 0
+        },
+        {
+          "player": "Chaballe",
+          "points": 0
+        },
+        {
+          "player": "Jujules85",
+          "points": 0
+        },
+        {
+          "player": "Gabinours",
+          "points": 0
+        }
+      ]
+    }
+  ]
 }
