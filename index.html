@@ -377,48 +377,46 @@
     <h3 class="font-bold text-lg mb-1">Jouer cette partie</h3>
     <p id="challengeMatchup" class="text-xs text-white/40 mb-4"></p>
 
-    <!-- État : en attente de création -->
-    <div id="challPending">
-      <button onclick="createOpenChallenge()"
-              class="btn-green w-full py-3 rounded-xl font-semibold mb-3">
-        ⚡ Créer la partie sur Lichess
-      </button>
-      <p class="text-xs text-white/30 text-center">
-        Génère deux liens personnalisés (un par joueur)
-      </p>
-    </div>
-
-    <!-- État : chargement -->
-    <div id="challLoading" class="hidden text-center py-4">
-      <span class="spinner"></span>
-      <p class="text-sm text-white/50 mt-2">Création en cours…</p>
-    </div>
-
-    <!-- État : succès — deux liens -->
-    <div id="challSuccess" class="hidden space-y-3 mb-4">
-      <p class="text-xs text-green-400 font-semibold">✓ Partie créée ! Chaque joueur clique sur son lien.</p>
-      <a id="challUrlWhite" href="#" target="_blank" rel="noopener"
+    <!-- Liens manuels — toujours visibles, toujours fonctionnels -->
+    <div id="challManual" class="space-y-2 mb-4">
+      <a id="challLinkWhite" href="#" target="_blank" rel="noopener"
          class="flex items-center justify-between bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition">
         <div>
           <p class="font-bold text-sm">♔ <span id="challWhiteName"></span></p>
-          <p class="text-xs opacity-50">Cliquer pour rejoindre en tant que Blancs</p>
+          <p class="text-xs opacity-50">Jouer en Blancs → profil Lichess de l'adversaire</p>
         </div>
-        <span class="text-xs font-semibold opacity-60">Rejoindre →</span>
+        <span class="text-xs font-semibold opacity-60">Défier →</span>
       </a>
-      <a id="challUrlBlack" href="#" target="_blank" rel="noopener"
+      <a id="challLinkBlack" href="#" target="_blank" rel="noopener"
          class="flex items-center justify-between bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition">
         <div>
           <p class="font-bold text-sm">♚ <span id="challBlackName"></span></p>
-          <p class="text-xs opacity-40">Cliquer pour rejoindre en tant que Noirs</p>
+          <p class="text-xs opacity-40">Jouer en Noirs → profil Lichess de l'adversaire</p>
         </div>
-        <span class="text-xs font-semibold opacity-40">Rejoindre →</span>
+        <span class="text-xs opacity-40">Défier →</span>
       </a>
-      <div class="flex gap-2">
-        <button onclick="copyChallUrl('white')" class="flex-1 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 transition">Copier lien Blancs</button>
-        <button onclick="copyChallUrl('black')" class="flex-1 py-1.5 rounded-lg text-xs bg-white/10 hover:bg-white/20 transition">Copier lien Noirs</button>
-      </div>
+      <p class="text-xs text-white/30 text-center pt-1">
+        Sur Lichess : cliquer sur "Défi" et entrer la cadence <span id="challTimeControl" class="text-white/50 font-mono"></span>
+      </p>
     </div>
 
+    <!-- Option auto via API — masquée si erreur -->
+    <div id="challApiSection" class="border-t border-white/10 pt-3 mb-3">
+      <div id="challPending">
+        <button onclick="createOpenChallenge()"
+                class="btn-green w-full py-2.5 rounded-xl text-sm font-semibold mb-1">
+          ⚡ Générer les liens automatiquement
+        </button>
+        <p class="text-xs text-white/25 text-center">Crée deux liens directs sans configuration manuelle</p>
+      </div>
+      <div id="challLoading" class="hidden text-center py-2">
+        <span class="spinner"></span>
+        <p class="text-xs text-white/40 mt-1">Création en cours…</p>
+      </div>
+      <div id="challSuccess" class="hidden space-y-2">
+        <p class="text-xs text-green-400 font-semibold">✓ Liens générés ! Chaque joueur clique sur son lien ci-dessus.</p>
+      </div>
+    </div>
 
     <button onclick="closeChallengeModal()"
             class="w-full py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
@@ -1440,10 +1438,15 @@ let _chState = {};
 
 function openChallenge(white, black, timeMin, timeInc, tId = "", roundId = "", pairingId = "") {
   _chState = { white, black, timeMin, timeInc, tId, roundId, pairingId };
+  const wName = displayName(white), bName = displayName(black);
   document.getElementById("challengeMatchup").textContent =
-    `${white} (♔ Blancs) vs ${black} (♚ Noirs) — ${timeMin}+${timeInc}`;
-  document.getElementById("challWhiteName").textContent = white;
-  document.getElementById("challBlackName").textContent = black;
+    `${wName} (♔) vs ${bName} (♚) — ${timeMin}+${timeInc}`;
+  document.getElementById("challWhiteName").textContent = wName;
+  document.getElementById("challBlackName").textContent = bName;
+  document.getElementById("challTimeControl").textContent = `${timeMin}+${timeInc}`;
+  // Manual links: each player goes to the OPPONENT's Lichess profile to challenge them
+  document.getElementById("challLinkWhite").href = `https://lichess.org/@/${black}`;
+  document.getElementById("challLinkBlack").href = `https://lichess.org/@/${white}`;
   challShow("pending");
   document.getElementById("challengeModal").classList.remove("hidden");
 }
@@ -1484,8 +1487,11 @@ async function createOpenChallenge() {
       }
       throw new Error(data?.error || `Erreur Lichess ${resp.status}`);
     }
-    document.getElementById("challUrlWhite").href = data.urlWhite || data.challenge?.url;
-    document.getElementById("challUrlBlack").href = data.urlBlack || data.challenge?.url;
+    // Replace manual profile links with direct challenge links
+    if (data.urlWhite) document.getElementById("challLinkWhite").href = data.urlWhite;
+    if (data.urlBlack) document.getElementById("challLinkBlack").href = data.urlBlack;
+    document.querySelector("#challLinkWhite p:last-child").textContent = "Cliquer pour rejoindre en tant que Blancs";
+    document.querySelector("#challLinkBlack p:last-child").textContent = "Cliquer pour rejoindre en tant que Noirs";
     challShow("success");
 
     // Save the challenge ID into the pairing so the scanner can find the game directly
@@ -1506,7 +1512,7 @@ async function createOpenChallenge() {
 }
 
 function copyChallUrl(color) {
-  const url = document.getElementById(color === "white" ? "challUrlWhite" : "challUrlBlack").href;
+  const url = document.getElementById(color === "white" ? "challLinkWhite" : "challLinkBlack").href;
   navigator.clipboard.writeText(url).then(() => showToast("Lien " + (color === "white" ? "Blancs" : "Noirs") + " copié !"));
 }
 
