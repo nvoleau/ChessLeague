@@ -85,10 +85,10 @@
               "id": "p1775950000001",
               "white": "Gabinours",
               "black": "Karismatik49",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/6VBkEqpn",
+              "completedAt": "2026-04-13T13:10:27.286199+00:00"
             },
             {
               "id": "p1775950000002",
@@ -136,6 +136,10 @@
           "points": 1.0
         },
         {
+          "player": "Karismatik49",
+          "points": 1.0
+        },
+        {
           "player": "nicoinca",
           "points": 0.0
         },
@@ -145,10 +149,6 @@
         },
         {
           "player": "Maximuspleinlecus",
-          "points": 0.0
-        },
-        {
-          "player": "Karismatik49",
           "points": 0.0
         },
         {
