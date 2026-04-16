@@ -112,10 +112,10 @@
               "id": "p1775950000004",
               "white": "Jujules85",
               "black": "nicoinca",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/gzvGeouA",
+              "completedAt": "2026-04-16T14:52:07.948156+00:00"
             },
             {
               "id": "p1775950000005",
@@ -132,16 +132,16 @@
       "maxRounds": 4,
       "standings": [
         {
+          "player": "nicoinca",
+          "points": 1.0
+        },
+        {
           "player": "jeyjeylight",
           "points": 1.0
         },
         {
           "player": "Karismatik49",
           "points": 1.0
-        },
-        {
-          "player": "nicoinca",
-          "points": 0.0
         },
         {
           "player": "BaptistePDFA",
