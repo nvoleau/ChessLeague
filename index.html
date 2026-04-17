@@ -100,6 +100,23 @@
     .sync-err  { color: #f87171; }
     .sync-busy { color: var(--gold); }
 
+    /* My pairing highlight */
+    .pairing-mine { box-shadow: inset 3px 0 0 var(--gold); }
+
+    /* Admin result buttons */
+    .btn-result {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 700;
+      padding: 2px 9px; border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--raised); color: var(--muted);
+      cursor: pointer; transition: all .12s;
+    }
+    .btn-result:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,147,58,.08); }
+
+    /* Forfeit badge */
+    .badge-forfeit { background:#1a1010; color:#f0a3a3; border:1px solid #5a2020; }
+
     /* Modal */
     .modal-bg { background: rgba(0,0,0,.88); backdrop-filter: blur(8px); }
 
@@ -160,12 +177,19 @@
 <!-- ============================================================
      TOURNAMENT SELECTOR
 ============================================================ -->
-<div class="max-w-4xl mx-auto px-4 pt-4">
-  <div class="flex items-center gap-3">
+<div class="max-w-4xl mx-auto px-4 pt-4 pb-2">
+  <div class="flex flex-wrap items-center gap-3">
     <select id="tournamentSelect" onchange="selectTournament(this.value)" class="max-w-xs text-sm">
       <option value="">Choisir un tournoi…</option>
     </select>
     <span id="lastUpdate" class="text-xs" style="color:var(--muted)"></span>
+    <div class="flex items-center gap-2 ml-auto">
+      <label class="text-xs whitespace-nowrap" style="color:var(--muted)" for="myLichessIdInput">Mon pseudo :</label>
+      <input id="myLichessIdInput" type="text" placeholder="votre-pseudo-lichess"
+             autocomplete="off" oninput="setMyId(this.value)"
+             style="width:160px;padding:4px 10px;font-size:12px" />
+      <span id="myIdHint" class="text-xs hidden" style="color:var(--gold)">vos parties sont surlignées ✦</span>
+    </div>
   </div>
 </div>
 
@@ -503,6 +527,7 @@
 let db = { config: { adminPassword: "chess2024" }, players: {}, tournaments: [] };
 let currentTournamentId = null;
 let isAdmin = false;
+let myLichessId = "";
 const DATA_URL = "data/tournaments.json";
 
 // ─── GitHub config (persisted in localStorage, never in the repo) ─────────────
@@ -522,6 +547,12 @@ async function init() {
   populateTournamentSelect();
   if (db.tournaments.length > 0) {
     selectTournament(db.tournaments[db.tournaments.length - 1].id);
+  }
+  const savedId = localStorage.getItem("ltm_my_id") || "";
+  if (savedId) {
+    myLichessId = savedId.toLowerCase();
+    document.getElementById("myLichessIdInput").value = savedId;
+    document.getElementById("myIdHint").classList.remove("hidden");
   }
   // Auto-refresh every 60 s (picks up changes from GitHub Actions)
   setInterval(async () => {
@@ -643,6 +674,15 @@ function setSyncStatus(state, text) {
   el.classList.remove("hidden", "sync-ok", "sync-err", "sync-busy");
   el.classList.add("sync-" + state);
   el.textContent = text;
+}
+
+// ─── Mon pseudo ───────────────────────────────────────────────────────────────
+function setMyId(val) {
+  myLichessId = val.trim().toLowerCase();
+  localStorage.setItem("ltm_my_id", val.trim());
+  const hint = document.getElementById("myIdHint");
+  hint.classList.toggle("hidden", !myLichessId);
+  renderCurrent();
 }
 
 // ─── GitHub config UI ─────────────────────────────────────────────────────────
@@ -840,11 +880,28 @@ function renderDashboard(t) {
     </div>` +
   t.rounds.map(round => {
     const played = round.pairings.filter(p => p.status === "played").length;
+    const dl = round.deadline;
+    const deadlineHtml = dl ? (() => {
+      const due  = isDue(dl);
+      const left = daysLeft(dl);
+      return `<span class="text-xs font-score" style="color:${due ? "#f87171" : "var(--muted)"}">
+        ⏰ ${fmtDate(dl)}${left ? " · " + left + " restants" : due ? " · délai dépassé" : ""}
+      </span>`;
+    })() : "";
+    const adminDeadlineInput = isAdmin ? `
+      <input type="date" title="Échéance de la ronde" value="${dl || ""}"
+             onchange="adminSetRoundDeadline('${t.id}','${round.id}',this.value)"
+             style="width:120px;padding:2px 6px;font-size:11px" />` : "";
     return `
       <div class="card rounded-xl overflow-hidden">
-        <div class="px-4 py-3 flex items-center justify-between" style="border-bottom:1px solid var(--border)">
+        <div class="px-4 py-3 flex items-center justify-between flex-wrap gap-2"
+             style="border-bottom:1px solid var(--border)">
           <h3 class="font-display font-semibold" style="color:var(--gold)">Ronde ${round.id}</h3>
-          <span class="text-xs font-score" style="color:var(--muted)">${played}/${round.pairings.length}</span>
+          <div class="flex items-center gap-3 flex-wrap">
+            ${deadlineHtml}
+            ${adminDeadlineInput}
+            <span class="text-xs font-score" style="color:var(--muted)">${played}/${round.pairings.length} jouées</span>
+          </div>
         </div>
         <div>
           ${round.pairings.map((p,i) => renderPairing(p, timeMin, timeInc, t.id, round.id, i)).join("")}
@@ -854,54 +911,68 @@ function renderDashboard(t) {
 }
 
 function renderPairing(p, timeMin, timeInc, tId = "", roundId = "", idx = 0) {
-  const rowBg = idx % 2 === 0 ? "" : `style="background:rgba(255,255,255,.015)"`;
+  const isMine = myLichessId && (
+    p.white.toLowerCase() === myLichessId || p.black.toLowerCase() === myLichessId
+  );
+  const rowStyle = `border-bottom:1px solid var(--border);${idx % 2 !== 0 ? "background:rgba(255,255,255,.015);" : ""}`;
 
   // BYE: special display
   if (p.black === "BYE") {
     const deleteBtn = isAdmin && tId ? `
       <button onclick="adminDeletePairing('${tId}','${roundId}','${p.id}')"
-        class="btn-red text-xs px-2 py-1 rounded-lg" title="Supprimer ce bye">🗑</button>` : "";
+        class="btn-red text-xs px-2 py-1 rounded-lg">🗑</button>` : "";
     return `
-    <div class="px-4 py-3" ${rowBg} style="border-bottom:1px solid var(--border)">
+    <div class="px-4 py-3${isMine ? " pairing-mine" : ""}" style="${rowStyle}">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2">
-          <span class="text-sm" style="color:var(--muted)">🎁 Bye —</span>
-          <span class="font-medium player-name">${playerTag(p.white)}</span>
-          <span class="text-xs" style="color:var(--muted)">(+1 pt)</span>
+          <span class="text-sm" style="color:var(--muted)">🎁</span>
+          <span class="player-name text-sm">${playerTag(p.white)}</span>
+          <span class="text-xs" style="color:var(--muted)">exempt · +1 pt</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="badge-exempt text-xs px-2 py-0.5 rounded-full">Exempt</span>
+          <span class="badge-exempt text-xs px-2 py-0.5 rounded-full">Bye</span>
           ${deleteBtn}
         </div>
       </div>
     </div>`;
   }
 
-  const badge = p.status === "played"
-    ? `<span class="badge-played text-xs px-2 py-0.5 rounded-full">Jouée</span>`
-    : `<span class="badge-pending text-xs px-2 py-0.5 rounded-full">En attente</span>`;
+  const badge = p.forfeit
+    ? `<span class="badge-forfeit text-xs px-2 py-0.5 rounded-full">Forfait</span>`
+    : p.status === "played"
+      ? `<span class="badge-played text-xs px-2 py-0.5 rounded-full">Jouée</span>`
+      : `<span class="badge-pending text-xs px-2 py-0.5 rounded-full">En attente</span>`;
 
   const result = p.result
     ? `<span class="font-score text-sm ${p.result==="1-0"?"result-w":p.result==="0-1"?"result-b":"result-d"}">${p.result}</span>`
     : "";
 
-  const link = p.gameUrl
+  const link = p.gameUrl && !p.forfeit
     ? `<a href="${p.gameUrl}" target="_blank" rel="noopener"
           class="text-xs hover:underline" style="color:var(--gold-lt)">Voir ↗</a>`
     : "";
 
   const playBtn = p.status === "pending" ? `
       <button onclick="openChallenge('${p.white}','${p.black}',${timeMin},${timeInc},'${tId}','${roundId}','${p.id}')"
-        class="btn-gold text-xs px-4 py-1.5 rounded-lg">
-        ▶ Jouer
-      </button>` : "";
+        class="btn-gold text-xs px-4 py-1.5 rounded-lg">▶ Jouer</button>` : "";
 
-  const deleteBtn = isAdmin && tId ? `
+  const adminActions = isAdmin && tId ? `
       <button onclick="adminDeletePairing('${tId}','${roundId}','${p.id}')"
-        class="btn-red text-xs px-2 py-1 rounded-lg" title="Supprimer cette partie">🗑</button>` : "";
+        class="btn-red text-xs px-2 py-1 rounded-lg">🗑</button>` : "";
+
+  const resultBtns = isAdmin && tId && p.status === "pending" ? `
+    <div class="flex flex-wrap gap-1 mt-2 items-center">
+      <span class="text-xs mr-1" style="color:var(--muted)">Saisir :</span>
+      <button onclick="adminSetResult('${tId}','${roundId}','${p.id}','1-0')" class="btn-result">1–0</button>
+      <button onclick="adminSetResult('${tId}','${roundId}','${p.id}','0.5-0.5')" class="btn-result">½–½</button>
+      <button onclick="adminSetResult('${tId}','${roundId}','${p.id}','0-1')" class="btn-result">0–1</button>
+      <span class="text-xs mx-1" style="color:var(--border)">|</span>
+      <button onclick="adminSetForfeit('${tId}','${roundId}','${p.id}','white')" class="btn-result" title="Forfait Blancs">Ff.♔</button>
+      <button onclick="adminSetForfeit('${tId}','${roundId}','${p.id}','black')" class="btn-result" title="Forfait Noirs">Ff.♚</button>
+    </div>` : "";
 
   return `
-    <div class="px-4 py-3" ${rowBg} style="border-bottom:1px solid var(--border)">
+    <div class="px-4 py-3${isMine ? " pairing-mine" : ""}" style="${rowStyle}">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-3 flex-wrap">
           <div class="flex items-center gap-2">
@@ -916,9 +987,9 @@ function renderPairing(p, timeMin, timeInc, tId = "", roundId = "", idx = 0) {
             <span class="player-name text-sm">${playerTag(p.black)}</span>
           </div>
         </div>
-        <div class="flex items-center gap-2">${result}${badge}${link}${deleteBtn}</div>
+        <div class="flex items-center gap-2">${result}${badge}${link}${adminActions}</div>
       </div>
-      ${playBtn ? `<div class="mt-2 pl-1">${playBtn}</div>` : ""}
+      ${playBtn || resultBtns ? `<div class="mt-2 pl-1 flex flex-wrap gap-2 items-start">${playBtn}${resultBtns}</div>` : ""}
     </div>`;
 }
 
@@ -932,14 +1003,25 @@ function renderStandings(t) {
   noSt.classList.add("hidden");
   table.classList.remove("hidden");
 
-  const rankIcon  = i => ["🥇","🥈","🥉"][i] ?? `${i+1}.`;
-  const rankClass = i => ["rank-1","rank-2","rank-3"][i] ?? "";
+  // Compute Buchholz and re-sort by [pts desc, buch desc]
+  const buch = calcBuchholz(t);
+  const sorted = [...t.standings].sort((a, b) => {
+    const d = b.points - a.points;
+    if (d !== 0) return d;
+    return (buch[b.player.toLowerCase()] || 0) - (buch[a.player.toLowerCase()] || 0);
+  });
+  // True rank: equal points AND equal buchholz → same rank
+  const trueRank = i => sorted.filter((s, j) => j < i &&
+    (s.points > sorted[i].points || (s.points === sorted[i].points && (buch[s.player.toLowerCase()]||0) > (buch[sorted[i].player.toLowerCase()]||0)))
+  ).length + 1;
+  const rankIcon  = r => r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : `${r}.`;
+  const rankClass = r => r === 1 ? "rank-1" : r === 2 ? "rank-2" : r === 3 ? "rank-3" : "";
 
   table.innerHTML = `
     <div class="px-4 py-4 relative overflow-hidden" style="border-bottom:1px solid var(--border)">
       <div class="chess-wm" style="opacity:.15"></div>
       <h3 class="font-display text-xl relative" style="color:var(--gold)">${escHtml(t.name)}</h3>
-      <p class="text-xs mt-0.5 relative" style="color:var(--muted)">Classement général · ${t.timeControl} · ${t.players.length} joueurs</p>
+      <p class="text-xs mt-0.5 relative" style="color:var(--muted)">Classement général · ${t.timeControl} · ${t.players.length} joueurs · départage Buchholz</p>
     </div>
     <table class="w-full text-sm">
       <thead>
@@ -947,17 +1029,23 @@ function renderStandings(t) {
           <th class="text-left px-4 py-2 font-normal">#</th>
           <th class="text-left px-4 py-2 font-normal">Joueur</th>
           <th class="text-right px-4 py-2 font-normal">Pts</th>
+          <th class="text-right px-4 py-2 font-normal" title="Buchholz : somme des points des adversaires">Buch.</th>
           <th class="text-right px-4 py-2 font-normal">Parties</th>
         </tr>
       </thead>
       <tbody>
-        ${t.standings.map((s, i) => `
-          <tr style="border-bottom:1px solid var(--border);${i===0?'background:rgba(201,147,58,.04)':''}">
-            <td class="px-4 py-3 ${rankClass(i)} font-score font-bold">${rankIcon(i)}</td>
+        ${sorted.map((s, i) => {
+          const r = trueRank(i);
+          const buchVal = buch[s.player.toLowerCase()] || 0;
+          return `
+          <tr style="border-bottom:1px solid var(--border);${r===1?'background:rgba(201,147,58,.04)':''}">
+            <td class="px-4 py-3 ${rankClass(r)} font-score font-bold">${rankIcon(r)}</td>
             <td class="px-4 py-3 player-name">${playerTag(s.player)}</td>
             <td class="px-4 py-3 text-right font-score font-bold" style="color:var(--gold-lt)">${fmtPts(s.points)}</td>
+            <td class="px-4 py-3 text-right font-score text-xs" style="color:var(--muted)">${fmtPts(buchVal)}</td>
             <td class="px-4 py-3 text-right text-xs" style="color:var(--muted)">${countGames(t, s.player)}</td>
-          </tr>`).join("")}
+          </tr>`;
+        }).join("")}
       </tbody>
     </table>`;
 }
@@ -1179,6 +1267,35 @@ function byePlayers(existingRounds) {
   return set;
 }
 
+// ─── Buchholz ─────────────────────────────────────────────────────────────────
+function calcBuchholz(t) {
+  // Recompute pts from scratch (standings may not be up to date)
+  const pts = {};
+  t.players.forEach(p => pts[p.toLowerCase()] = 0);
+  for (const round of t.rounds) {
+    for (const p of round.pairings) {
+      if (p.status !== "played") continue;
+      if (p.black === "BYE") { pts[p.white.toLowerCase()] = (pts[p.white.toLowerCase()] || 0) + 1; continue; }
+      const w = p.white.toLowerCase(), b = p.black.toLowerCase();
+      if (p.result === "1-0")          pts[w] = (pts[w] || 0) + 1;
+      else if (p.result === "0-1")     pts[b] = (pts[b] || 0) + 1;
+      else if (p.result === "0.5-0.5") { pts[w] = (pts[w] || 0) + 0.5; pts[b] = (pts[b] || 0) + 0.5; }
+    }
+  }
+  // Buchholz = sum of opponents' current pts
+  const buch = {};
+  t.players.forEach(p => buch[p.toLowerCase()] = 0);
+  for (const round of t.rounds) {
+    for (const p of round.pairings) {
+      if (p.status !== "played" || p.black === "BYE") continue;
+      const w = p.white.toLowerCase(), b = p.black.toLowerCase();
+      buch[w] = (buch[w] || 0) + (pts[b] || 0);
+      buch[b] = (buch[b] || 0) + (pts[w] || 0);
+    }
+  }
+  return buch;
+}
+
 function generateRound(roundId, players, existingRounds = []) {
   const counts = colorCounts(players, existingRounds);
   const isFirst = existingRounds.length === 0;
@@ -1333,9 +1450,14 @@ function recalcStandings(t) {
       }
     }
   }
+  const buch = calcBuchholz(t);
   t.standings = t.players
     .map(p => ({ player: p, points: scores[p.toLowerCase()] || 0 }))
-    .sort((a, b) => b.points - a.points);
+    .sort((a, b) => {
+      const d = b.points - a.points;
+      if (d !== 0) return d;
+      return (buch[b.player.toLowerCase()] || 0) - (buch[a.player.toLowerCase()] || 0);
+    });
 }
 
 async function adminDeletePairing(tId, roundId, pairingId) {
@@ -1348,6 +1470,50 @@ async function adminDeletePairing(tId, roundId, pairingId) {
   renderCurrent();
   renderAdminTournamentList();
   showToast("Partie supprimée.");
+}
+
+// ─── Admin: saisie manuelle du résultat ──────────────────────────────────────
+async function adminSetResult(tId, roundId, pairingId, result) {
+  const t = db.tournaments.find(x => x.id === tId); if (!t) return;
+  const round = t.rounds.find(r => r.id == roundId); if (!round) return;
+  const pairing = round.pairings.find(p => p.id === pairingId); if (!pairing) return;
+  pairing.result = result;
+  pairing.status = "played";
+  pairing.completedAt = new Date().toISOString();
+  delete pairing.forfeit;
+  recalcStandings(t);
+  await save(`chore: set result ${result} for pairing ${pairingId}`);
+  renderCurrent();
+  renderAdminTournamentList();
+  showToast(`Résultat ${result} enregistré.`);
+}
+
+async function adminSetForfeit(tId, roundId, pairingId, forfeiter) {
+  const t = db.tournaments.find(x => x.id === tId); if (!t) return;
+  const round = t.rounds.find(r => r.id == roundId); if (!round) return;
+  const pairing = round.pairings.find(p => p.id === pairingId); if (!pairing) return;
+  const loserName = displayName(forfeiter === "white" ? pairing.white : pairing.black);
+  if (!confirm(`Enregistrer le forfait de ${loserName} ?`)) return;
+  pairing.result = forfeiter === "white" ? "0-1" : "1-0";
+  pairing.status = "played";
+  pairing.forfeit = true;
+  pairing.gameUrl = null;
+  pairing.completedAt = new Date().toISOString();
+  recalcStandings(t);
+  await save(`chore: forfeit ${forfeiter} for pairing ${pairingId}`);
+  renderCurrent();
+  renderAdminTournamentList();
+  showToast(`Forfait de ${loserName} enregistré.`);
+}
+
+// ─── Admin: échéance de ronde ─────────────────────────────────────────────────
+async function adminSetRoundDeadline(tId, roundId, isoDate) {
+  const t = db.tournaments.find(x => x.id === tId); if (!t) return;
+  const round = t.rounds.find(r => r.id == roundId); if (!round) return;
+  round.deadline = isoDate || null;
+  await save(`chore: set deadline round ${roundId}`);
+  renderCurrent();
+  showToast(isoDate ? `Échéance fixée au ${fmtDate(isoDate)}.` : "Échéance supprimée.");
 }
 
 async function saveConfig() {
@@ -1473,6 +1639,12 @@ function fmtDate(iso) {
 }
 function isDue(iso) {
   return iso && new Date(iso) < new Date();
+}
+function daysLeft(iso) {
+  if (!iso) return "";
+  const diff = Math.ceil((new Date(iso) - new Date()) / 86400000);
+  if (diff <= 0) return "";
+  return diff === 1 ? "1 jour" : `${diff} jours`;
 }
 function escHtml(s) {
   return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
