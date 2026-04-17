@@ -3,68 +3,143 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cercle d'Échecs Spicéen — Tournament Manager</title>
+  <title>Cercle d'Échecs Spicéen — Tournois</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-    .chess-gradient { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
-    .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-    .badge-pending  { background:#854d0e; color:#fef9c3; }
-    .badge-played   { background:#14532d; color:#d1fae5; }
-    .result-w { color:#4ade80; font-weight:700; }
-    .result-b { color:#f87171; font-weight:700; }
-    .result-d { color:#facc15; font-weight:700; }
-    .btn-primary { background:#2563eb; transition:background .2s; }
-    .btn-primary:hover { background:#1d4ed8; }
-    .btn-green { background:#16a34a; transition:background .2s; }
-    .btn-green:hover { background:#15803d; }
-    .btn-red { background:#dc2626; transition:background .2s; }
-    .btn-red:hover { background:#b91c1c; }
-    .tab-active { border-bottom: 2px solid #2563eb; color:#60a5fa; }
+    :root {
+      --bg:      #0C0C0E;
+      --surface: #141416;
+      --raised:  #1C1C1F;
+      --border:  #2A2A2D;
+      --gold:    #C9933A;
+      --gold-lt: #E8B96A;
+      --text:    #EDE8DC;
+      --muted:   #6C6C72;
+      --win:     #2D7A52;
+      --loss:    #8B2020;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .font-display { font-family: 'Playfair Display', Georgia, serif; }
+    .font-score   { font-family: 'JetBrains Mono', monospace; }
+    .player-name  { font-family: 'Playfair Display', Georgia, serif; font-style: italic; }
+
+    /* Surfaces */
+    .card        { background: var(--surface); border: 1px solid var(--border); }
+    .card-raised { background: var(--raised);  border: 1px solid var(--border); }
+
+    /* Buttons */
+    .btn-gold    { background: var(--gold); color: #0C0C0E; font-weight: 600; transition: background .15s; }
+    .btn-gold:hover { background: var(--gold-lt); }
+    .btn-green   { background: #1a5c38; color: #a3f0c4; font-weight: 500; transition: background .15s; }
+    .btn-green:hover { background: #1f6e43; }
+    .btn-red     { background: #5c1a1a; color: #f0a3a3; font-weight: 500; transition: background .15s; }
+    .btn-red:hover { background: #6e1f1f; }
+    .btn-primary { background: #1e3a5f; color: #93c5fd; font-weight: 500; transition: background .15s; }
+    .btn-primary:hover { background: #264d7a; }
+    .btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--muted); transition: all .15s; }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Tabs */
+    .tab-active { border-bottom: 2px solid var(--gold) !important; color: var(--gold) !important; }
+
+    /* Badges */
+    .badge-pending { background:#2a1f08; color:#d4a853; border:1px solid #5a3f0e; }
+    .badge-played  { background:#0d2a1a; color:#4ade80; border:1px solid #1a5c38; }
+    .badge-exempt  { background:#1a1a2a; color:#8888cc; border:1px solid #333366; }
+
+    /* Results — JetBrains Mono + semantic colors */
+    .result-w { color:#4ade80; font-family:'JetBrains Mono',monospace; font-weight:600; }
+    .result-b { color:#f87171; font-family:'JetBrains Mono',monospace; font-weight:600; }
+    .result-d { color:var(--gold); font-family:'JetBrains Mono',monospace; font-weight:600; }
+
+    /* Rank */
+    .rank-1 { color: var(--gold); }
+    .rank-2 { color: #9ca3af; }
+    .rank-3 { color: #b45309; }
+
+    /* Inputs */
     input, select, textarea {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.2);
-      color: white;
+      background: var(--raised);
+      border: 1px solid var(--border);
+      color: var(--text);
       border-radius: 6px;
       padding: 8px 12px;
       width: 100%;
       outline: none;
+      font-family: 'DM Sans', sans-serif;
     }
-    input:focus, select:focus, textarea:focus { border-color:#2563eb; }
-    input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.4); }
-    select option { background:#1e293b; }
-    .modal-bg { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
-    .rank-1 { color:#fbbf24; }
-    .rank-2 { color:#9ca3af; }
-    .rank-3 { color:#b45309; }
-    .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color:#2563eb; border-radius:50%; width:18px; height:18px; animation: spin .7s linear infinite; display:inline-block; vertical-align:middle; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(201,147,58,.12);
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    select option { background: var(--raised); color: var(--text); }
+
+    /* Spinner */
+    .spinner {
+      border: 2px solid rgba(201,147,58,.15);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      width: 18px; height: 18px;
+      animation: spin .7s linear infinite;
+      display: inline-block; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Sync */
     .sync-ok   { color: #4ade80; }
     .sync-err  { color: #f87171; }
-    .sync-busy { color: #facc15; }
+    .sync-busy { color: var(--gold); }
+
+    /* Modal */
+    .modal-bg { background: rgba(0,0,0,.88); backdrop-filter: blur(8px); }
+
+    /* Chess watermark */
+    .chess-wm {
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+      background-image: repeating-conic-gradient(rgba(237,232,220,.04) 0% 25%, transparent 0% 50%);
+      background-size: 28px 28px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   </style>
 </head>
-<body class="chess-gradient min-h-screen text-white">
+<body style="background:var(--bg);color:var(--text)" class="min-h-screen">
 
 <!-- ============================================================
      HEADER
 ============================================================ -->
-<header class="border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-10"
-        style="background:rgba(15,15,30,0.9);backdrop-filter:blur(12px)">
-  <div class="flex items-center gap-3">
-    <img src="logo.jpg" alt="Cercle d'Échecs Spicéen" class="h-10 w-10 rounded-full object-cover border border-yellow-400/40" />
+<header style="background:rgba(12,12,14,.96);border-bottom:1px solid var(--border);backdrop-filter:blur(10px)"
+        class="px-4 py-3 flex items-center justify-between sticky top-0 z-10 relative overflow-hidden">
+  <div class="chess-wm" style="opacity:.35"></div>
+  <div class="flex items-center gap-3 relative">
+    <img src="logo.jpg" alt="Cercle d'Échecs Spicéen"
+         class="h-10 w-10 rounded-full object-cover shrink-0"
+         style="border:2px solid var(--gold);box-shadow:0 0 0 4px rgba(201,147,58,.12)" />
     <div>
-      <h1 class="font-bold text-lg leading-none">Tournament Manager</h1>
-      <p class="text-xs text-white/50">Cercle d'Échecs Spicéen</p>
+      <h1 class="font-display font-bold leading-none" style="color:var(--gold);font-size:1.1rem">
+        Cercle d'Échecs Spicéen
+      </h1>
+      <p class="text-xs" style="color:var(--muted)">Gestionnaire de tournois</p>
     </div>
   </div>
-  <div class="flex items-center gap-3">
-    <!-- Sync status badge -->
+  <div class="flex items-center gap-3 relative">
     <span id="syncStatus" class="text-xs hidden"></span>
     <div id="adminBadge" class="hidden">
-      <button onclick="logout()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition">
-        Admin ✕ Déconnexion
+      <button onclick="logout()" class="btn-ghost text-xs px-3 py-1.5 rounded-full">
+        Admin · Déconnexion
       </button>
     </div>
   </div>
@@ -73,14 +148,14 @@
 <!-- ============================================================
      MAIN NAV TABS
 ============================================================ -->
-<div class="border-b border-white/10 px-4 flex gap-1" style="background:rgba(15,15,30,0.7)">
+<nav style="background:var(--surface);border-bottom:1px solid var(--border)" class="px-4 flex">
   <button onclick="showTab('dashboard')" id="tab-dashboard"
-          class="px-4 py-3 text-sm font-medium tab-active transition-colors">Dashboard</button>
+          class="px-5 py-3 text-sm font-medium transition-colors tab-active">Rondes</button>
   <button onclick="showTab('standings')" id="tab-standings"
-          class="px-4 py-3 text-sm font-medium text-white/60 hover:text-white transition-colors">Classement</button>
+          class="px-5 py-3 text-sm font-medium transition-colors" style="color:var(--muted)">Classement</button>
   <button onclick="showTab('admin')" id="tab-admin"
-          class="px-4 py-3 text-sm font-medium text-white/60 hover:text-white transition-colors">Admin</button>
-</div>
+          class="px-5 py-3 text-sm font-medium transition-colors" style="color:var(--muted)">Admin</button>
+</nav>
 
 <!-- ============================================================
      TOURNAMENT SELECTOR
@@ -90,7 +165,7 @@
     <select id="tournamentSelect" onchange="selectTournament(this.value)" class="max-w-xs text-sm">
       <option value="">Choisir un tournoi…</option>
     </select>
-    <span id="lastUpdate" class="text-xs text-white/40"></span>
+    <span id="lastUpdate" class="text-xs" style="color:var(--muted)"></span>
   </div>
 </div>
 
@@ -98,10 +173,10 @@
      DASHBOARD TAB
 ============================================================ -->
 <main id="view-dashboard" class="max-w-4xl mx-auto px-4 py-4">
-  <div id="noBracket" class="text-center py-16 text-white/40">
-    <img src="logo.jpg" alt="CES" class="h-20 w-20 rounded-full object-cover mx-auto mb-4 opacity-40" />
-    <p class="text-lg">Aucun tournoi sélectionné</p>
-    <p class="text-sm mt-1">Choisissez un tournoi dans la liste ci-dessus</p>
+  <div id="noBracket" class="text-center py-20" style="color:var(--muted)">
+    <div style="font-size:4rem;opacity:.25;line-height:1" class="mb-5">♟</div>
+    <p class="font-display text-xl" style="color:var(--text);opacity:.4;font-style:italic">Aucun tournoi sélectionné</p>
+    <p class="text-sm mt-2">Choisissez un tournoi dans la liste ci-dessus</p>
   </div>
   <div id="roundsContainer" class="hidden space-y-4"></div>
 </main>
@@ -110,9 +185,9 @@
      STANDINGS TAB
 ============================================================ -->
 <main id="view-standings" class="hidden max-w-4xl mx-auto px-4 py-4">
-  <div id="noStandings" class="text-center py-16 text-white/40">
-    <p class="text-4xl mb-3">🏆</p>
-    <p>Aucun tournoi sélectionné</p>
+  <div id="noStandings" class="text-center py-20" style="color:var(--muted)">
+    <div style="font-size:3.5rem;opacity:.25;line-height:1" class="mb-5">🏆</div>
+    <p class="font-display text-xl" style="color:var(--text);opacity:.4;font-style:italic">Aucun tournoi sélectionné</p>
   </div>
   <div id="standingsTable" class="hidden card rounded-xl overflow-hidden"></div>
 </main>
@@ -123,13 +198,16 @@
 <main id="view-admin" class="hidden max-w-4xl mx-auto px-4 py-4">
 
   <!-- Login form -->
-  <div id="adminLogin" class="card rounded-xl p-6 max-w-sm mx-auto mt-8">
-    <h2 class="text-lg font-semibold mb-4">Accès Administrateur</h2>
-    <form onsubmit="adminLogin(event)">
-      <label class="block text-sm text-white/70 mb-1">Mot de passe</label>
-      <input type="password" id="adminPasswordInput" placeholder="••••••••" class="mb-4" required />
-      <button type="submit" class="btn-primary w-full py-2 rounded-lg text-sm font-medium">Connexion</button>
-      <p id="loginError" class="text-red-400 text-xs mt-2 hidden">Mot de passe incorrect</p>
+  <div id="adminLogin" class="card rounded-xl p-8 max-w-sm mx-auto mt-10">
+    <h2 class="font-display text-2xl mb-1" style="color:var(--gold);font-style:italic">Administration</h2>
+    <p class="text-sm mb-6" style="color:var(--muted)">Réservé aux organisateurs du club.</p>
+    <form onsubmit="adminLogin(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs mb-1" style="color:var(--muted)">Mot de passe</label>
+        <input type="password" id="adminPasswordInput" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn-gold w-full py-2.5 rounded-lg text-sm">Connexion</button>
+      <p id="loginError" class="text-sm hidden" style="color:#f87171">Mot de passe incorrect</p>
     </form>
   </div>
 
@@ -138,47 +216,46 @@
 
     <!-- ── GitHub Sync ──────────────────────────────────────────── -->
     <div class="card rounded-xl p-5">
-      <h2 class="text-base font-semibold mb-1 flex items-center gap-2">
-        <span>🔗</span> Synchronisation GitHub
+      <h2 class="font-display text-lg mb-1 flex items-center gap-2" style="color:var(--gold)">
+        Synchronisation GitHub
       </h2>
-      <p class="text-xs text-white/50 mb-4">
-        Chaque modification (créer/supprimer un tournoi, ajouter une ronde…) sera commitée
-        automatiquement dans votre repo. Le JSON mis à jour est visible par tous les joueurs
-        en quelques secondes.
+      <p class="text-xs mb-4" style="color:var(--muted)">
+        Chaque modification sera commitée automatiquement dans votre repo.
+        Le JSON mis à jour est visible par tous les joueurs en quelques secondes.
       </p>
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs text-white/60 mb-1">Propriétaire du repo</label>
+            <label class="block text-xs mb-1" style="color:var(--muted)">Propriétaire du repo</label>
             <input type="text" id="ghOwner" placeholder="mon-pseudo-github" />
           </div>
           <div>
-            <label class="block text-xs text-white/60 mb-1">Nom du repo</label>
+            <label class="block text-xs mb-1" style="color:var(--muted)">Nom du repo</label>
             <input type="text" id="ghRepo" placeholder="chess-league" />
           </div>
         </div>
         <div>
-          <label class="block text-xs text-white/60 mb-1">
+          <label class="block text-xs mb-1" style="color:var(--muted)">
             Personal Access Token
             <a href="https://github.com/settings/tokens/new?description=chess-league&scopes=public_repo"
                target="_blank" rel="noopener"
-               class="text-blue-400 hover:text-blue-300 ml-1">→ Créer sur GitHub</a>
+               style="color:var(--gold-lt)" class="ml-1 hover:underline">→ Créer sur GitHub</a>
           </label>
           <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
-          <p class="text-xs text-white/40 mt-1">
-            Utiliser un token à portée <code class="text-yellow-300/70">public_repo</code> (repo public)
-            ou <code class="text-yellow-300/70">repo</code> (repo privé).
-            Stocké uniquement dans votre navigateur, jamais envoyé ailleurs qu'à l'API GitHub.
+          <p class="text-xs mt-1" style="color:var(--muted)">
+            Portée <code style="color:var(--gold-lt)">public_repo</code> (repo public) ou
+            <code style="color:var(--gold-lt)">repo</code> (repo privé).
+            Stocké uniquement dans votre navigateur.
           </p>
         </div>
         <div class="flex gap-2 flex-wrap">
-          <button onclick="saveGhConfig()" class="btn-green px-4 py-2 rounded-lg text-sm font-medium">
+          <button onclick="saveGhConfig()" class="btn-green px-4 py-2 rounded-lg text-sm">
             Enregistrer et tester
           </button>
-          <button onclick="forceSyncNow()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+          <button onclick="forceSyncNow()" class="btn-ghost px-4 py-2 rounded-lg text-sm">
             Forcer la sync
           </button>
-          <button onclick="clearGhConfig()" class="px-4 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
+          <button onclick="clearGhConfig()" class="btn-ghost px-4 py-2 rounded-lg text-sm">
             Effacer
           </button>
         </div>
@@ -188,32 +265,29 @@
 
     <!-- ── Token Lichess admin ─────────────────────────────────── -->
     <div class="card rounded-xl p-5">
-      <h2 class="text-base font-semibold mb-1 flex items-center gap-2">
-        <span>♟</span> Token Lichess (création des défis)
-      </h2>
-      <p class="text-xs text-white/50 mb-4">
+      <h2 class="font-display text-lg mb-1" style="color:var(--gold)">Token Lichess</h2>
+      <p class="text-xs mb-4" style="color:var(--muted)">
         Un seul token suffit pour tout le club. Quand un joueur clique "Jouer cette partie",
-        l'application crée automatiquement la partie sur Lichess et génère deux liens
-        (un par joueur, avec la bonne couleur).
+        l'application génère deux liens directs (un par couleur).
       </p>
       <div class="space-y-3">
         <div>
-          <label class="block text-xs text-white/60 mb-1">
+          <label class="block text-xs mb-1" style="color:var(--muted)">
             Token Lichess admin
             <a href="https://lichess.org/account/oauth/token/create?scopes[]=challenge:write&description=ChessLeague+admin"
-               target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300 ml-1">→ Créer sur Lichess</a>
+               target="_blank" rel="noopener" style="color:var(--gold-lt)" class="ml-1 hover:underline">→ Créer sur Lichess</a>
           </label>
           <input type="password" id="lichessAdminToken" placeholder="Collez votre token ici" autocomplete="off" />
-          <p class="text-xs text-white/40 mt-1">
-            Permission requise : <code class="text-yellow-300/70">challenge:write</code>.
+          <p class="text-xs mt-1" style="color:var(--muted)">
+            Permission requise : <code style="color:var(--gold-lt)">challenge:write</code>.
             Stocké uniquement dans votre navigateur.
           </p>
         </div>
         <div class="flex gap-2">
-          <button onclick="saveLichessToken()" class="btn-green px-4 py-2 rounded-lg text-sm font-medium">
+          <button onclick="saveLichessToken()" class="btn-green px-4 py-2 rounded-lg text-sm">
             Enregistrer et tester
           </button>
-          <button onclick="clearLichessToken()" class="px-4 py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
+          <button onclick="clearLichessToken()" class="btn-ghost px-4 py-2 rounded-lg text-sm">
             Effacer
           </button>
         </div>
@@ -223,75 +297,70 @@
 
     <!-- ── Créer un tournoi ─────────────────────────────────────── -->
     <div class="card rounded-xl p-5">
-      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
-        <span>➕</span> Créer un tournoi
-      </h2>
+      <h2 class="font-display text-lg mb-4" style="color:var(--gold)">Créer un tournoi</h2>
       <form onsubmit="createTournament(event)" class="space-y-3">
         <div>
-          <label class="block text-xs text-white/60 mb-1">Nom du tournoi</label>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Nom du tournoi</label>
           <input type="text" id="tName" placeholder="Championnat du club — Saison 2" required />
         </div>
         <div>
-          <label class="block text-xs text-white/60 mb-1">Description (facultatif)</label>
-          <textarea id="tDescription" rows="2" placeholder="Tournoi interne du club, format suisse, classement FFE…"
-                    class="resize-none"
-                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);
-                           color:white;border-radius:6px;padding:8px 12px;width:100%;outline:none;"></textarea>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Description (facultatif)</label>
+          <textarea id="tDescription" rows="2" placeholder="Tournoi interne du club, format suisse…"
+                    class="resize-none"></textarea>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs text-white/60 mb-1">Cadence (ex: 10+5)</label>
+            <label class="block text-xs mb-1" style="color:var(--muted)">Cadence (ex: 10+5)</label>
             <input type="text" id="tTimeControl" placeholder="10+5" pattern="\d+\+\d+"
                    title="Format: minutes+incrément ex: 10+5" required />
           </div>
           <div>
-            <label class="block text-xs text-white/60 mb-1">Date de fin</label>
+            <label class="block text-xs mb-1" style="color:var(--muted)">Date de fin</label>
             <input type="date" id="tEndDate" />
           </div>
         </div>
         <div>
-          <label class="block text-xs text-white/60 mb-1">Joueurs</label>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Joueurs</label>
 
           <!-- Selected players chips -->
-          <div id="tPlayerChips" class="flex flex-wrap gap-1.5 min-h-[36px] mb-2 p-2 rounded-lg"
-               style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);">
-            <span id="tPlayerChipsEmpty" class="text-white/30 text-xs self-center">Aucun joueur sélectionné</span>
+          <div id="tPlayerChips" class="flex flex-wrap gap-1.5 p-2 rounded-lg mb-2"
+               style="min-height:40px;background:var(--raised);border:1px solid var(--border)">
+            <span id="tPlayerChipsEmpty" class="text-xs self-center" style="color:var(--muted)">Aucun joueur sélectionné</span>
           </div>
 
           <!-- Pick from existing profiles -->
           <div id="tExistingPlayersWrap" class="mb-2 hidden">
-            <p class="text-xs text-white/50 mb-1">Joueurs du club :</p>
+            <p class="text-xs mb-1" style="color:var(--muted)">Joueurs du club :</p>
             <div id="tExistingPlayerBtns" class="flex flex-wrap gap-1.5"></div>
           </div>
 
           <!-- Add new player inline -->
           <details class="mt-1">
-            <summary class="text-xs text-blue-400 cursor-pointer select-none hover:text-blue-300">+ Nouveau joueur (pseudo + nom)</summary>
+            <summary class="text-xs cursor-pointer select-none hover:underline" style="color:var(--gold)">+ Nouveau joueur (pseudo + nom)</summary>
             <div class="flex flex-wrap gap-2 mt-2 items-end">
               <div class="flex-1 min-w-[130px]">
-                <label class="block text-xs text-white/50 mb-1">Pseudo Lichess *</label>
+                <label class="block text-xs mb-1" style="color:var(--muted)">Pseudo Lichess *</label>
                 <input type="text" id="tNewLichess" placeholder="jeyjeylight" autocomplete="off" />
               </div>
               <div class="flex-1 min-w-[100px]">
-                <label class="block text-xs text-white/50 mb-1">Prénom</label>
+                <label class="block text-xs mb-1" style="color:var(--muted)">Prénom</label>
                 <input type="text" id="tNewFirstName" placeholder="Jean" />
               </div>
               <div class="flex-1 min-w-[100px]">
-                <label class="block text-xs text-white/50 mb-1">Nom</label>
+                <label class="block text-xs mb-1" style="color:var(--muted)">Nom</label>
                 <input type="text" id="tNewLastName" placeholder="Dupont" />
               </div>
               <button type="button" onclick="tAddNewPlayer()"
-                      class="btn-primary px-3 py-2 rounded-lg text-sm whitespace-nowrap">Ajouter</button>
+                      class="btn-ghost px-3 py-2 rounded-lg text-sm whitespace-nowrap">Ajouter</button>
             </div>
           </details>
-          <!-- Hidden field carrying the final list -->
           <input type="hidden" id="tPlayers" />
         </div>
         <div>
-          <label class="block text-xs text-white/60 mb-1">Nombre de rondes (max)</label>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Nombre de rondes (max)</label>
           <input type="number" id="tRounds" min="1" max="15" value="5" required />
         </div>
-        <button type="submit" class="btn-green w-full py-2.5 rounded-lg text-sm font-semibold">
+        <button type="submit" class="btn-gold w-full py-2.5 rounded-lg text-sm font-semibold">
           Générer le tournoi
         </button>
       </form>
@@ -299,35 +368,29 @@
 
     <!-- ── Gérer les tournois ──────────────────────────────────── -->
     <div class="card rounded-xl p-5">
-      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
-        <span>⚙️</span> Gérer les tournois
-      </h2>
-
-      <!-- Liste des tournois avec actions inline -->
+      <h2 class="font-display text-lg mb-4" style="color:var(--gold)">Gérer les tournois</h2>
       <div id="adminTournamentList" class="space-y-2"></div>
-      <p id="adminNoTournaments" class="text-white/40 text-sm hidden">Aucun tournoi créé.</p>
+      <p id="adminNoTournaments" class="text-sm hidden" style="color:var(--muted)">Aucun tournoi créé.</p>
     </div>
 
     <!-- ── Fiches joueurs ────────────────────────────────────────── -->
     <div class="card rounded-xl p-5">
-      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
-        <span>👤</span> Fiches joueurs
-      </h2>
-      <p class="text-xs text-white/50 mb-3">Associez un vrai nom à chaque pseudo Lichess. Il s'affichera dans le dashboard et le classement.</p>
+      <h2 class="font-display text-lg mb-1" style="color:var(--gold)">Fiches joueurs</h2>
+      <p class="text-xs mb-4" style="color:var(--muted)">Associez un vrai nom à chaque pseudo Lichess. Il s'affichera dans le tableau des rondes et le classement.</p>
       <form onsubmit="savePlayerProfile(event)" class="flex flex-wrap gap-2 mb-4 items-end">
         <div class="flex-1 min-w-[140px]">
-          <label class="block text-xs text-white/60 mb-1">Pseudo Lichess</label>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Pseudo Lichess</label>
           <input type="text" id="ppLichess" placeholder="jeyjeylight" autocomplete="off" required />
         </div>
         <div class="flex-1 min-w-[120px]">
-          <label class="block text-xs text-white/60 mb-1">Prénom</label>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Prénom</label>
           <input type="text" id="ppFirstName" placeholder="Jean" />
         </div>
         <div class="flex-1 min-w-[120px]">
-          <label class="block text-xs text-white/60 mb-1">Nom</label>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Nom</label>
           <input type="text" id="ppLastName" placeholder="Dupont" />
         </div>
-        <button type="submit" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
+        <button type="submit" class="btn-gold px-4 py-2 rounded-lg text-sm whitespace-nowrap">
           Enregistrer
         </button>
       </form>
@@ -336,15 +399,13 @@
 
     <!-- ── Configuration ───────────────────────────────────────── -->
     <div class="card rounded-xl p-5">
-      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
-        <span>🔧</span> Configuration
-      </h2>
+      <h2 class="font-display text-lg mb-4" style="color:var(--gold)">Configuration</h2>
       <div class="space-y-3">
         <div>
-          <label class="block text-xs text-white/60 mb-1">Nouveau mot de passe admin</label>
+          <label class="block text-xs mb-1" style="color:var(--muted)">Nouveau mot de passe admin</label>
           <input type="password" id="newPassword" placeholder="Laisser vide pour ne pas changer" />
         </div>
-        <button onclick="saveConfig()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+        <button onclick="saveConfig()" class="btn-ghost px-4 py-2 rounded-lg text-sm">
           Sauvegarder
         </button>
       </div>
@@ -352,14 +413,12 @@
 
     <!-- ── Export / Import manuel ──────────────────────────────── -->
     <div class="card rounded-xl p-5">
-      <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
-        <span>💾</span> Export / Import manuel
-      </h2>
+      <h2 class="font-display text-lg mb-4" style="color:var(--gold)">Export / Import</h2>
       <div class="flex flex-wrap gap-2">
-        <button onclick="exportData()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+        <button onclick="exportData()" class="btn-ghost px-4 py-2 rounded-lg text-sm">
           ⬇ Exporter JSON
         </button>
-        <label class="btn-primary px-4 py-2 rounded-lg text-sm font-medium cursor-pointer">
+        <label class="btn-ghost px-4 py-2 rounded-lg text-sm cursor-pointer">
           ⬆ Importer JSON
           <input type="file" accept=".json" class="hidden" onchange="importData(event)" />
         </label>
@@ -373,53 +432,56 @@
      MODAL: Challenge
 ============================================================ -->
 <div id="challengeModal" class="hidden fixed inset-0 modal-bg flex items-center justify-center z-50 p-4">
-  <div class="card rounded-2xl p-6 w-full max-w-sm">
-    <h3 class="font-bold text-lg mb-1">Jouer cette partie</h3>
-    <p id="challengeMatchup" class="text-xs text-white/40 mb-4"></p>
+  <div class="card rounded-2xl p-6 w-full max-w-sm" style="border-color:var(--border)">
+    <h3 class="font-display text-xl mb-0.5" style="color:var(--gold)">Jouer cette partie</h3>
+    <p id="challengeMatchup" class="text-xs mb-5" style="color:var(--muted)"></p>
 
     <!-- Liens manuels — toujours visibles, toujours fonctionnels -->
     <div id="challManual" class="space-y-2 mb-4">
       <a id="challLinkWhite" href="#" target="_blank" rel="noopener"
-         class="flex items-center justify-between bg-white/90 hover:bg-white text-gray-900 rounded-xl px-4 py-3 transition">
+         class="flex items-center justify-between rounded-xl px-4 py-3 transition"
+         style="background:#f0ede6;color:#0C0C0E" onmouseover="this.style.background='#fff'" onmouseout="this.style.background='#f0ede6'">
         <div>
           <p class="font-bold text-sm">♔ <span id="challWhiteName"></span></p>
-          <p class="text-xs opacity-50">Jouer en Blancs → profil Lichess de l'adversaire</p>
+          <p class="text-xs" style="opacity:.5">Jouer en Blancs → profil Lichess de l'adversaire</p>
         </div>
-        <span class="text-xs font-semibold opacity-60">Défier →</span>
+        <span class="text-xs font-semibold" style="opacity:.5">Défier →</span>
       </a>
       <a id="challLinkBlack" href="#" target="_blank" rel="noopener"
-         class="flex items-center justify-between bg-gray-900 hover:bg-gray-800 border border-white/20 text-white rounded-xl px-4 py-3 transition">
+         class="flex items-center justify-between rounded-xl px-4 py-3 transition"
+         style="background:var(--raised);border:1px solid var(--border);color:var(--text)">
         <div>
           <p class="font-bold text-sm">♚ <span id="challBlackName"></span></p>
-          <p class="text-xs opacity-40">Jouer en Noirs → profil Lichess de l'adversaire</p>
+          <p class="text-xs" style="color:var(--muted)">Jouer en Noirs → profil Lichess de l'adversaire</p>
         </div>
-        <span class="text-xs opacity-40">Défier →</span>
+        <span class="text-xs" style="color:var(--muted)">Défier →</span>
       </a>
-      <p class="text-xs text-white/30 text-center pt-1">
-        Sur Lichess : cliquer sur "Défi" et entrer la cadence <span id="challTimeControl" class="text-white/50 font-mono"></span>
+      <p class="text-xs text-center pt-1" style="color:var(--muted)">
+        Sur Lichess : cliquer sur "Défi" et entrer la cadence
+        <span id="challTimeControl" class="font-score" style="color:var(--text)"></span>
       </p>
     </div>
 
-    <!-- Option auto via API — masquée si erreur -->
-    <div id="challApiSection" class="border-t border-white/10 pt-3 mb-3">
+    <!-- Option auto via API -->
+    <div id="challApiSection" class="pt-3 mb-3" style="border-top:1px solid var(--border)">
       <div id="challPending">
         <button onclick="createOpenChallenge()"
-                class="btn-green w-full py-2.5 rounded-xl text-sm font-semibold mb-1">
+                class="btn-ghost w-full py-2.5 rounded-xl text-sm mb-1">
           ⚡ Générer les liens automatiquement
         </button>
-        <p class="text-xs text-white/25 text-center">Crée deux liens directs sans configuration manuelle</p>
+        <p class="text-xs text-center" style="color:var(--muted)">Crée deux liens directs sans configuration manuelle</p>
       </div>
       <div id="challLoading" class="hidden text-center py-2">
         <span class="spinner"></span>
-        <p class="text-xs text-white/40 mt-1">Création en cours…</p>
+        <p class="text-xs mt-1" style="color:var(--muted)">Création en cours…</p>
       </div>
-      <div id="challSuccess" class="hidden space-y-2">
-        <p class="text-xs text-green-400 font-semibold">✓ Liens générés ! Chaque joueur clique sur son lien ci-dessus.</p>
+      <div id="challSuccess" class="hidden">
+        <p class="text-xs font-semibold" style="color:#4ade80">✓ Liens générés ! Chaque joueur clique sur son lien ci-dessus.</p>
       </div>
     </div>
 
     <button onclick="closeChallengeModal()"
-            class="w-full py-2 rounded-lg text-sm bg-white/10 hover:bg-white/20 transition">
+            class="btn-ghost w-full py-2 rounded-lg text-sm">
       Fermer
     </button>
   </div>
@@ -429,7 +491,8 @@
      TOAST NOTIFICATIONS
 ============================================================ -->
 <div id="toast"
-     class="hidden fixed bottom-4 right-4 max-w-xs bg-slate-800 border border-white/20 rounded-xl px-4 py-3 text-sm shadow-xl z-50">
+     class="hidden fixed bottom-4 right-4 max-w-xs rounded-xl px-4 py-3 text-sm z-50"
+     style="background:var(--raised);border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.6)">
 </div>
 
 <!-- ============================================================
@@ -674,41 +737,42 @@ function renderAdminTournamentList() {
   empty.classList.add("hidden");
   list.innerHTML = db.tournaments.map(t => {
     const statusBadge = t.status === "completed"
-      ? `<span class="text-xs text-green-400">✓ Terminé</span>`
-      : `<span class="text-xs text-yellow-300">En cours</span>`;
+      ? `<span class="badge-played text-xs px-2 py-0.5 rounded-full">Terminé</span>`
+      : `<span class="badge-pending text-xs px-2 py-0.5 rounded-full">En cours</span>`;
     const rounds  = t.rounds.length;
     const maxR    = t.maxRounds || "?";
     const pending = t.rounds.flatMap(r => r.pairings).filter(p => p.status === "pending").length;
     const canAddRound = t.status !== "completed" && rounds < (t.maxRounds || 99);
     return `
-      <div class="bg-white/5 border border-white/10 rounded-xl p-3">
-        <div class="flex items-start justify-between gap-2 mb-2">
+      <div class="card-raised rounded-xl p-3">
+        <div class="flex items-start justify-between gap-2 mb-3">
           <div>
-            <p class="font-semibold text-sm">${escHtml(t.name)}</p>
-            <p class="text-xs text-white/40">${t.timeControl} · ${t.players.length} joueurs · Ronde ${rounds}/${maxR} · ${pending} en attente</p>
+            <p class="font-display font-semibold" style="color:var(--text)">${escHtml(t.name)}</p>
+            <p class="text-xs mt-0.5" style="color:var(--muted)">
+              <span class="font-score">${t.timeControl}</span> · ${t.players.length} joueurs ·
+              Ronde ${rounds}/${maxR} · ${pending} en attente
+            </p>
           </div>
           ${statusBadge}
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="selectAndGo('${t.id}')"
-                  class="text-xs px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition">
+                  class="btn-ghost text-xs px-3 py-1.5 rounded-lg">
             👁 Voir
           </button>
           ${t.status !== "completed" ? `
-          ${canAddRound ? `<button onclick="adminAddRound('${t.id}')"
-                  class="text-xs px-3 py-1.5 rounded-lg btn-primary">
-            ➕ Ronde suisse
-          </button>` : `<span class="text-xs text-white/30 px-2 py-1.5">Rondes max atteintes</span>`}
+          ${canAddRound
+            ? `<button onclick="adminAddRound('${t.id}')"
+                  class="btn-primary text-xs px-3 py-1.5 rounded-lg">
+                ➕ Ronde suisse
+              </button>`
+            : `<span class="text-xs px-2 py-1.5" style="color:var(--muted)">Rondes max atteintes</span>`}
           <button onclick="adminComplete('${t.id}')"
-                  class="text-xs px-3 py-1.5 rounded-lg btn-red">
-            🏁 Clôturer
-          </button>
-          <button onclick="adminComplete('${t.id}')"
-                  class="text-xs px-3 py-1.5 rounded-lg btn-red">
+                  class="btn-red text-xs px-3 py-1.5 rounded-lg">
             🏁 Clôturer
           </button>` : ""}
-          <button onclick="adminDelete('${t.id}', '${escHtml(t.name).replace(/'/g,"\\\'")}')"
-                  class="text-xs px-3 py-1.5 rounded-lg bg-red-900/50 hover:bg-red-800 transition text-red-300">
+          <button onclick="adminDelete('${t.id}', '${escHtml(t.name).replace(/'/g,"\\'")}')"
+                  class="btn-red text-xs px-3 py-1.5 rounded-lg">
             🗑 Supprimer
           </button>
         </div>
@@ -739,36 +803,37 @@ function renderDashboard(t) {
   noBracket.classList.add("hidden");
   rounds.classList.remove("hidden");
 
-  // Tournament header
   const endDateHtml = t.endDate
-    ? `<span class="text-white/50">·</span>
-       <span class="text-white/60">Fin le <strong class="text-white/80">${fmtDate(t.endDate)}</strong></span>
-       ${isDue(t.endDate) ? '<span class="text-red-400 text-xs font-semibold">⚠ Délai dépassé</span>' : ''}`
+    ? `<span style="color:var(--muted)">·</span>
+       <span style="color:var(--muted)">Fin le <strong style="color:var(--text)">${fmtDate(t.endDate)}</strong></span>
+       ${isDue(t.endDate) ? '<span style="color:#f87171" class="text-xs font-semibold">⚠ Délai dépassé</span>' : ''}`
     : "";
   const descHtml = t.description
-    ? `<p class="text-sm text-white/60 mt-1">${escHtml(t.description)}</p>` : "";
+    ? `<p class="text-sm mt-1" style="color:var(--muted)">${escHtml(t.description)}</p>` : "";
   const pendingTotal = t.rounds.flatMap(r => r.pairings).filter(p => p.status === "pending").length;
   const [timeMin, timeInc] = parseTimeControl(t.timeControl);
 
   rounds.innerHTML = `
-    <div class="card rounded-xl p-4 mb-1">
-      <div class="flex items-start gap-3">
-        <img src="logo.jpg" alt="CES" class="h-10 w-10 rounded-full object-cover border border-yellow-400/30 shrink-0 mt-0.5" />
+    <div class="card rounded-xl p-4 mb-1 relative overflow-hidden">
+      <div class="chess-wm" style="opacity:.2"></div>
+      <div class="flex items-start gap-3 relative">
+        <img src="logo.jpg" alt="CES" class="h-12 w-12 rounded-full object-cover shrink-0 mt-0.5"
+             style="border:2px solid var(--gold);box-shadow:0 0 0 3px rgba(201,147,58,.1)" />
         <div class="min-w-0">
-          <h2 class="font-bold text-base leading-tight">${escHtml(t.name)}</h2>
+          <h2 class="font-display font-bold text-lg leading-tight" style="color:var(--text)">${escHtml(t.name)}</h2>
           ${descHtml}
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs">
-            <span class="text-white/60">⏱ <strong class="text-white/80">${t.timeControl}</strong></span>
-            <span class="text-white/50">·</span>
-            <span class="text-white/60">👥 <strong class="text-white/80">${t.players.length}</strong> joueurs</span>
-            <span class="text-white/50">·</span>
-            <span class="text-white/60">Ronde <strong class="text-white/80">${t.rounds.length}${t.maxRounds ? "/"+t.maxRounds : ""}</strong></span>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs" style="color:var(--muted)">
+            <span class="font-score" style="color:var(--gold-lt)">${t.timeControl}</span>
+            <span>·</span>
+            <span>${t.players.length} joueurs</span>
+            <span>·</span>
+            <span>Ronde <strong style="color:var(--text)">${t.rounds.length}${t.maxRounds ? "/"+t.maxRounds : ""}</strong></span>
             ${endDateHtml}
             ${t.status === "completed"
-              ? '<span class="text-green-400 font-semibold">✓ Terminé</span>'
+              ? '<span style="color:#4ade80" class="font-semibold">✓ Terminé</span>'
               : pendingTotal > 0
-                ? `<span class="text-yellow-300">${pendingTotal} partie(s) en attente</span>`
-                : '<span class="text-green-400">Toutes les parties jouées</span>'}
+                ? `<span style="color:#d4a853">${pendingTotal} partie(s) en attente</span>`
+                : '<span style="color:#4ade80">Toutes les parties jouées</span>'}
           </div>
         </div>
       </div>
@@ -777,34 +842,35 @@ function renderDashboard(t) {
     const played = round.pairings.filter(p => p.status === "played").length;
     return `
       <div class="card rounded-xl overflow-hidden">
-        <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-          <h3 class="font-semibold">Ronde ${round.id}</h3>
-          <span class="text-xs text-white/50">${played}/${round.pairings.length} parties jouées</span>
+        <div class="px-4 py-3 flex items-center justify-between" style="border-bottom:1px solid var(--border)">
+          <h3 class="font-display font-semibold" style="color:var(--gold)">Ronde ${round.id}</h3>
+          <span class="text-xs font-score" style="color:var(--muted)">${played}/${round.pairings.length}</span>
         </div>
-        <div class="divide-y divide-white/5">
-          ${round.pairings.map(p => renderPairing(p, timeMin, timeInc, t.id, round.id)).join("")}
+        <div>
+          ${round.pairings.map((p,i) => renderPairing(p, timeMin, timeInc, t.id, round.id, i)).join("")}
         </div>
       </div>`;
-  }).join("") ;
+  }).join("");
 }
 
-function renderPairing(p, timeMin, timeInc, tId = "", roundId = "") {
+function renderPairing(p, timeMin, timeInc, tId = "", roundId = "", idx = 0) {
+  const rowBg = idx % 2 === 0 ? "" : `style="background:rgba(255,255,255,.015)"`;
+
   // BYE: special display
   if (p.black === "BYE") {
     const deleteBtn = isAdmin && tId ? `
       <button onclick="adminDeletePairing('${tId}','${roundId}','${p.id}')"
-        class="text-xs px-2 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-800/60 text-red-300 transition"
-        title="Supprimer ce bye">🗑</button>` : "";
+        class="btn-red text-xs px-2 py-1 rounded-lg" title="Supprimer ce bye">🗑</button>` : "";
     return `
-    <div class="px-4 py-3">
+    <div class="px-4 py-3" ${rowBg} style="border-bottom:1px solid var(--border)">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-2">
-          <span class="text-white/60 text-sm">🎁 Bye —</span>
-          <span class="font-medium">${playerTag(p.white)}</span>
-          <span class="text-xs text-white/40">(+1 pt automatique)</span>
+          <span class="text-sm" style="color:var(--muted)">🎁 Bye —</span>
+          <span class="font-medium player-name">${playerTag(p.white)}</span>
+          <span class="text-xs" style="color:var(--muted)">(+1 pt)</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="badge-played text-xs px-2 py-0.5 rounded-full">Exempt</span>
+          <span class="badge-exempt text-xs px-2 py-0.5 rounded-full">Exempt</span>
           ${deleteBtn}
         </div>
       </div>
@@ -816,44 +882,43 @@ function renderPairing(p, timeMin, timeInc, tId = "", roundId = "") {
     : `<span class="badge-pending text-xs px-2 py-0.5 rounded-full">En attente</span>`;
 
   const result = p.result
-    ? `<span class="font-mono text-sm ${p.result==="1-0"?"result-w":p.result==="0-1"?"result-b":"result-d"}">${p.result}</span>`
+    ? `<span class="font-score text-sm ${p.result==="1-0"?"result-w":p.result==="0-1"?"result-b":"result-d"}">${p.result}</span>`
     : "";
 
   const link = p.gameUrl
     ? `<a href="${p.gameUrl}" target="_blank" rel="noopener"
-          class="text-xs text-blue-400 hover:text-blue-300 transition">Voir ↗</a>`
+          class="text-xs hover:underline" style="color:var(--gold-lt)">Voir ↗</a>`
     : "";
 
   const playBtn = p.status === "pending" ? `
       <button onclick="openChallenge('${p.white}','${p.black}',${timeMin},${timeInc},'${tId}','${roundId}','${p.id}')"
-        class="btn-green text-xs px-4 py-1.5 rounded-lg font-medium">
+        class="btn-gold text-xs px-4 py-1.5 rounded-lg">
         ▶ Jouer
       </button>` : "";
 
   const deleteBtn = isAdmin && tId ? `
       <button onclick="adminDeletePairing('${tId}','${roundId}','${p.id}')"
-        class="text-xs px-2 py-1.5 rounded-lg bg-red-900/40 hover:bg-red-800/60 text-red-300 transition"
-        title="Supprimer cette partie">
-        🗑
-      </button>` : "";
+        class="btn-red text-xs px-2 py-1 rounded-lg" title="Supprimer cette partie">🗑</button>` : "";
 
   return `
-    <div class="px-4 py-3">
+    <div class="px-4 py-3" ${rowBg} style="border-bottom:1px solid var(--border)">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-3 flex-wrap">
-          <div class="flex items-center gap-1.5">
-            <span class="inline-flex items-center gap-1 bg-white/90 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">♔ Blancs</span>
-            <span class="font-medium">${playerTag(p.white)}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style="background:#e8e3d9;color:#1a1a1a">♔ Bl.</span>
+            <span class="player-name text-sm">${playerTag(p.white)}</span>
           </div>
-          <span class="text-white/30 text-sm font-light">—</span>
-          <div class="flex items-center gap-1.5">
-            <span class="inline-flex items-center gap-1 bg-gray-900 text-white/80 border border-white/20 text-xs font-bold px-2 py-0.5 rounded-full">♚ Noirs</span>
-            <span class="font-medium">${playerTag(p.black)}</span>
+          <span class="text-sm font-light" style="color:var(--border)">vs</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style="background:var(--raised);border:1px solid var(--border);color:var(--text)">♚ Nr.</span>
+            <span class="player-name text-sm">${playerTag(p.black)}</span>
           </div>
         </div>
         <div class="flex items-center gap-2">${result}${badge}${link}${deleteBtn}</div>
       </div>
-      ${playBtn ? `<div class="mt-2">${playBtn}</div>` : ""}
+      ${playBtn ? `<div class="mt-2 pl-1">${playBtn}</div>` : ""}
     </div>`;
 }
 
@@ -871,26 +936,27 @@ function renderStandings(t) {
   const rankClass = i => ["rank-1","rank-2","rank-3"][i] ?? "";
 
   table.innerHTML = `
-    <div class="px-4 py-3 border-b border-white/10">
-      <h3 class="font-semibold">${t.name} — Classement</h3>
-      <p class="text-xs text-white/50 mt-0.5">${t.timeControl} · ${t.players.length} joueurs</p>
+    <div class="px-4 py-4 relative overflow-hidden" style="border-bottom:1px solid var(--border)">
+      <div class="chess-wm" style="opacity:.15"></div>
+      <h3 class="font-display text-xl relative" style="color:var(--gold)">${escHtml(t.name)}</h3>
+      <p class="text-xs mt-0.5 relative" style="color:var(--muted)">Classement général · ${t.timeControl} · ${t.players.length} joueurs</p>
     </div>
     <table class="w-full text-sm">
       <thead>
-        <tr class="text-xs text-white/40 border-b border-white/10">
-          <th class="text-left px-4 py-2">Rang</th>
-          <th class="text-left px-4 py-2">Joueur</th>
-          <th class="text-right px-4 py-2">Points</th>
-          <th class="text-right px-4 py-2">Parties</th>
+        <tr class="text-xs" style="color:var(--muted);border-bottom:1px solid var(--border)">
+          <th class="text-left px-4 py-2 font-normal">#</th>
+          <th class="text-left px-4 py-2 font-normal">Joueur</th>
+          <th class="text-right px-4 py-2 font-normal">Pts</th>
+          <th class="text-right px-4 py-2 font-normal">Parties</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-white/5">
+      <tbody>
         ${t.standings.map((s, i) => `
-          <tr class="hover:bg-white/5 transition">
-            <td class="px-4 py-3 ${rankClass(i)}">${rankIcon(i)}</td>
-            <td class="px-4 py-3 font-medium">${playerTag(s.player)}</td>
-            <td class="px-4 py-3 text-right font-mono font-bold">${fmtPts(s.points)}</td>
-            <td class="px-4 py-3 text-right text-white/50">${countGames(t, s.player)}</td>
+          <tr style="border-bottom:1px solid var(--border);${i===0?'background:rgba(201,147,58,.04)':''}">
+            <td class="px-4 py-3 ${rankClass(i)} font-score font-bold">${rankIcon(i)}</td>
+            <td class="px-4 py-3 player-name">${playerTag(s.player)}</td>
+            <td class="px-4 py-3 text-right font-score font-bold" style="color:var(--gold-lt)">${fmtPts(s.points)}</td>
+            <td class="px-4 py-3 text-right text-xs" style="color:var(--muted)">${countGames(t, s.player)}</td>
           </tr>`).join("")}
       </tbody>
     </table>`;
@@ -945,10 +1011,11 @@ function tRefreshUI() {
 
   // Chips
   const chipHtml = tSelectedPlayers.map(id => {
-    const label = displayName(id) !== id ? `${displayName(id)} <span class="opacity-60">(${escHtml(id)})</span>` : escHtml(id);
-    return `<span class="inline-flex items-center gap-1 bg-blue-900/60 border border-blue-500/40 text-xs px-2 py-1 rounded-full">
+    const label = displayName(id) !== id ? `${displayName(id)} <span style="opacity:.5">(${escHtml(id)})</span>` : escHtml(id);
+    return `<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full"
+              style="background:rgba(201,147,58,.15);border:1px solid rgba(201,147,58,.3);color:var(--gold-lt)">
       ${label}
-      <button type="button" onclick="tRemovePlayer('${id}')" class="ml-1 text-white/50 hover:text-white leading-none">✕</button>
+      <button type="button" onclick="tRemovePlayer('${id}')" style="color:var(--muted)" class="ml-1 leading-none hover:text-white">✕</button>
     </span>`;
   }).join("");
   chips.innerHTML = chipHtml || "";
@@ -1013,9 +1080,10 @@ function tRenderExistingPlayers() {
       const sel   = tSelectedPlayers.includes(p.lichessId || key);
       return `<button type="button" data-lid="${escHtml(p.lichessId || key)}"
         onclick="tAddPlayer('${escHtml(p.lichessId || key)}')"
-        class="text-xs px-2.5 py-1 rounded-full border transition
-               ${sel ? "border-blue-500/40 bg-blue-900/40 opacity-30 cursor-not-allowed"
-                     : "border-white/20 bg-white/10 hover:bg-white/20"}"
+        class="text-xs px-2.5 py-1 rounded-full transition"
+        style="${sel
+          ? "background:rgba(201,147,58,.08);border:1px solid rgba(201,147,58,.2);color:var(--muted);opacity:.4;cursor:not-allowed"
+          : "background:var(--raised);border:1px solid var(--border);color:var(--text)"}"
         ${sel ? "disabled" : ""}>
         ${escHtml(label)}
       </button>`;
@@ -1330,7 +1398,7 @@ function renderPlayerProfileList() {
   const el = document.getElementById("playerProfileList");
   if (!el) return;
   const entries = Object.entries(db.players || {});
-  if (!entries.length) { el.innerHTML = `<p class="text-xs text-white/30">Aucune fiche créée.</p>`; return; }
+  if (!entries.length) { el.innerHTML = `<p class="text-xs" style="color:var(--muted)">Aucune fiche créée.</p>`; return; }
   el.innerHTML = entries
     .sort((a, b) => {
       const na = a[1].lastName || a[1].firstName || a[0];
@@ -1340,16 +1408,16 @@ function renderPlayerProfileList() {
     .map(([key, p]) => {
       const name = [p.firstName, p.lastName].filter(Boolean).join(" ") || "—";
       return `
-      <div class="flex items-center justify-between gap-2 py-1.5 border-b border-white/5">
+      <div class="flex items-center justify-between gap-2 py-2" style="border-bottom:1px solid var(--border)">
         <div>
-          <span class="text-sm font-medium">${escHtml(name)}</span>
-          <span class="text-xs text-white/40 ml-2">${escHtml(p.lichessId || key)}</span>
+          <span class="player-name text-sm">${escHtml(name)}</span>
+          <span class="text-xs ml-2 font-score" style="color:var(--muted)">${escHtml(p.lichessId || key)}</span>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-1.5">
           <button onclick="editPlayerProfile('${key}')"
-                  class="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition">✏️</button>
+                  class="btn-ghost text-xs px-2 py-1 rounded-lg">✏</button>
           <button onclick="deletePlayerProfile('${key}')"
-                  class="text-xs px-2 py-1 rounded bg-red-900/40 hover:bg-red-800/60 text-red-300 transition">🗑</button>
+                  class="btn-red text-xs px-2 py-1 rounded-lg">🗑</button>
         </div>
       </div>`;
     }).join("");
@@ -1383,8 +1451,13 @@ function showTab(tab) {
   ["dashboard","standings","admin"].forEach(t => {
     document.getElementById("view-" + t).classList.toggle("hidden", t !== tab);
     const el = document.getElementById("tab-" + t);
-    el.classList.toggle("tab-active", t === tab);
-    el.classList.toggle("text-white/60", t !== tab);
+    if (t === tab) {
+      el.classList.add("tab-active");
+      el.style.color = "";
+    } else {
+      el.classList.remove("tab-active");
+      el.style.color = "var(--muted)";
+    }
   });
 }
 
@@ -1414,21 +1487,22 @@ function displayName(lichessId) {
   return parts.length ? parts.join(" ") : lichessId;
 }
 function playerTag(lichessId) {
-  // Returns "Prénom NOM (pseudo)" or just "pseudo" if no profile
   if (!lichessId || lichessId === "BYE") return lichessId;
   const p = (db.players || {})[lichessId.toLowerCase()];
   if (!p || (!p.firstName && !p.lastName)) return escHtml(lichessId);
   const name = [p.firstName, p.lastName].filter(Boolean).join(" ");
-  return `${escHtml(name)} <span class="text-white/40 text-xs">(${escHtml(lichessId)})</span>`;
+  return `${escHtml(name)} <span class="font-score text-xs" style="color:var(--muted)">${escHtml(lichessId)}</span>`;
 }
 let toastTimer;
 function showToast(msg, type = "success") {
   const el = document.getElementById("toast");
   el.textContent = msg;
-  el.className = `fixed bottom-4 right-4 max-w-xs rounded-xl px-4 py-3 text-sm shadow-xl z-50 border ${
-    type === "error"
-      ? "bg-red-900/80 border-red-500/30 text-red-200"
-      : "bg-slate-800 border-white/20 text-white"}`;
+  el.className = "fixed bottom-4 right-4 max-w-xs rounded-xl px-4 py-3 text-sm z-50";
+  if (type === "error") {
+    el.style.cssText = "background:#3d1010;border:1px solid #7a2020;color:#f0a3a3;box-shadow:0 8px 32px rgba(0,0,0,.6)";
+  } else {
+    el.style.cssText = `background:var(--raised);border:1px solid var(--gold);color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.6)`;
+  }
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.add("hidden"), 3500);
 }
