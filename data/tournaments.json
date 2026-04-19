@@ -127,49 +127,100 @@
               "completedAt": "2026-04-19T15:32:13.157719+00:00"
             }
           ]
+        },
+        {
+          "id": 2,
+          "createdAt": "2026-04-19T15:36:07.124Z",
+          "pairings": [
+            {
+              "id": "p1776612967124",
+              "white": "Chaballe",
+              "black": "nicoinca",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1776612967125",
+              "white": "jeyjeylight",
+              "black": "Yggdrasil-PdF",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1776612967126",
+              "white": "Karismatik49",
+              "black": "BaptistePDFA",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1776612967127",
+              "white": "Maximuspleinlecus",
+              "black": "Azery49",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            },
+            {
+              "id": "p1776612967128",
+              "white": "Jujules85",
+              "black": "Gabinours",
+              "status": "pending",
+              "result": null,
+              "gameUrl": null,
+              "completedAt": null
+            }
+          ]
         }
       ],
       "maxRounds": 4,
       "standings": [
         {
           "player": "nicoinca",
-          "points": 1.0
+          "points": 1
         },
         {
           "player": "jeyjeylight",
-          "points": 1.0
+          "points": 1
         },
         {
           "player": "Karismatik49",
-          "points": 1.0
+          "points": 1
         },
         {
           "player": "Yggdrasil-PdF",
-          "points": 1.0
+          "points": 1
         },
         {
           "player": "Chaballe",
-          "points": 1.0
+          "points": 1
         },
         {
           "player": "BaptistePDFA",
-          "points": 0.0
+          "points": 0
         },
         {
           "player": "Maximuspleinlecus",
-          "points": 0.0
+          "points": 0
         },
         {
           "player": "Azery49",
-          "points": 0.0
+          "points": 0
         },
         {
           "player": "Jujules85",
-          "points": 0.0
+          "points": 0
         },
         {
           "player": "Gabinours",
-          "points": 0.0
+          "points": 0
         }
       ]
     }
