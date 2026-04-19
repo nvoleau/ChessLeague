@@ -94,10 +94,10 @@
               "id": "p1775950000002",
               "white": "BaptistePDFA",
               "black": "Chaballe",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/QxYiPkH7",
+              "completedAt": "2026-04-19T15:32:11.738126+00:00"
             },
             {
               "id": "p1775950000003",
@@ -121,10 +121,10 @@
               "id": "p1775950000005",
               "white": "Yggdrasil-PdF",
               "black": "Maximuspleinlecus",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "1-0",
+              "gameUrl": "https://lichess.org/Th1RICAw",
+              "completedAt": "2026-04-19T15:32:13.157719+00:00"
             }
           ]
         }
@@ -144,6 +144,14 @@
           "points": 1.0
         },
         {
+          "player": "Yggdrasil-PdF",
+          "points": 1.0
+        },
+        {
+          "player": "Chaballe",
+          "points": 1.0
+        },
+        {
           "player": "BaptistePDFA",
           "points": 0.0
         },
@@ -153,14 +161,6 @@
         },
         {
           "player": "Azery49",
-          "points": 0.0
-        },
-        {
-          "player": "Yggdrasil-PdF",
-          "points": 0.0
-        },
-        {
-          "player": "Chaballe",
           "points": 0.0
         },
         {
