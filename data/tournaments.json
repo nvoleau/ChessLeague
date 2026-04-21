@@ -163,10 +163,10 @@
               "id": "p1776612967127",
               "white": "Maximuspleinlecus",
               "black": "Azery49",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/gdm2nkM5",
+              "completedAt": "2026-04-21T20:13:44.036762+00:00"
             },
             {
               "id": "p1776612967128",
@@ -184,43 +184,43 @@
       "standings": [
         {
           "player": "nicoinca",
-          "points": 1
+          "points": 1.0
         },
         {
           "player": "jeyjeylight",
-          "points": 1
+          "points": 1.0
         },
         {
           "player": "Karismatik49",
-          "points": 1
-        },
-        {
-          "player": "Yggdrasil-PdF",
-          "points": 1
-        },
-        {
-          "player": "Chaballe",
-          "points": 1
-        },
-        {
-          "player": "BaptistePDFA",
-          "points": 0
-        },
-        {
-          "player": "Maximuspleinlecus",
-          "points": 0
+          "points": 1.0
         },
         {
           "player": "Azery49",
-          "points": 0
+          "points": 1.0
+        },
+        {
+          "player": "Yggdrasil-PdF",
+          "points": 1.0
+        },
+        {
+          "player": "Chaballe",
+          "points": 1.0
+        },
+        {
+          "player": "BaptistePDFA",
+          "points": 0.0
+        },
+        {
+          "player": "Maximuspleinlecus",
+          "points": 0.0
         },
         {
           "player": "Jujules85",
-          "points": 0
+          "points": 0.0
         },
         {
           "player": "Gabinours",
-          "points": 0
+          "points": 0.0
         }
       ]
     }
