@@ -172,10 +172,10 @@
               "id": "p1776612967128",
               "white": "Jujules85",
               "black": "Gabinours",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/ZyZw0bf0",
+              "completedAt": "2026-04-22T19:04:30.872520+00:00"
             }
           ]
         }
@@ -207,6 +207,10 @@
           "points": 1.0
         },
         {
+          "player": "Gabinours",
+          "points": 1.0
+        },
+        {
           "player": "BaptistePDFA",
           "points": 0.0
         },
@@ -216,10 +220,6 @@
         },
         {
           "player": "Jujules85",
-          "points": 0.0
-        },
-        {
-          "player": "Gabinours",
           "points": 0.0
         }
       ]
