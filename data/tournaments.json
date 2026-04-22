@@ -136,10 +136,10 @@
               "id": "p1776612967124",
               "white": "Chaballe",
               "black": "nicoinca",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "1-0",
+              "gameUrl": "https://lichess.org/8kas4RYQ",
+              "completedAt": "2026-04-22T10:45:59.965434+00:00"
             },
             {
               "id": "p1776612967125",
@@ -183,6 +183,10 @@
       "maxRounds": 4,
       "standings": [
         {
+          "player": "Chaballe",
+          "points": 2.0
+        },
+        {
           "player": "nicoinca",
           "points": 1.0
         },
@@ -200,10 +204,6 @@
         },
         {
           "player": "Yggdrasil-PdF",
-          "points": 1.0
-        },
-        {
-          "player": "Chaballe",
           "points": 1.0
         },
         {
