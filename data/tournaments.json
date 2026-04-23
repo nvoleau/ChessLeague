@@ -145,10 +145,10 @@
               "id": "p1776612967125",
               "white": "jeyjeylight",
               "black": "Yggdrasil-PdF",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "1-0",
+              "gameUrl": "https://lichess.org/PbR3mltv",
+              "completedAt": "2026-04-23T19:48:20.303355+00:00"
             },
             {
               "id": "p1776612967126",
@@ -183,15 +183,15 @@
       "maxRounds": 4,
       "standings": [
         {
+          "player": "jeyjeylight",
+          "points": 2.0
+        },
+        {
           "player": "Chaballe",
           "points": 2.0
         },
         {
           "player": "nicoinca",
-          "points": 1.0
-        },
-        {
-          "player": "jeyjeylight",
           "points": 1.0
         },
         {
