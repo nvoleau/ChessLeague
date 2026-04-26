@@ -154,10 +154,10 @@
               "id": "p1776612967126",
               "white": "Karismatik49",
               "black": "BaptistePDFA",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "1-0",
+              "gameUrl": "https://lichess.org/iZSLtzCv",
+              "completedAt": "2026-04-26T13:45:06.159398+00:00"
             },
             {
               "id": "p1776612967127",
@@ -187,15 +187,15 @@
           "points": 2.0
         },
         {
+          "player": "Karismatik49",
+          "points": 2.0
+        },
+        {
           "player": "Chaballe",
           "points": 2.0
         },
         {
           "player": "nicoinca",
-          "points": 1.0
-        },
-        {
-          "player": "Karismatik49",
           "points": 1.0
         },
         {
