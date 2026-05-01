@@ -205,10 +205,10 @@
               "id": "p1777231503863",
               "white": "nicoinca",
               "black": "Yggdrasil-PdF",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "1-0",
+              "gameUrl": "https://lichess.org/pR4QIb6A",
+              "completedAt": "2026-05-01T15:50:40.315016+00:00"
             },
             {
               "id": "p1777231503864",
@@ -238,16 +238,16 @@
           "points": 3.0
         },
         {
+          "player": "nicoinca",
+          "points": 2.0
+        },
+        {
           "player": "jeyjeylight",
           "points": 2.0
         },
         {
           "player": "Chaballe",
           "points": 2.0
-        },
-        {
-          "player": "nicoinca",
-          "points": 1.0
         },
         {
           "player": "Azery49",
