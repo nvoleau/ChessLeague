@@ -187,10 +187,10 @@
               "id": "p1777231503861",
               "white": "jeyjeylight",
               "black": "Karismatik49",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/KOvpOlKf",
+              "completedAt": "2026-05-01T11:36:47.233819+00:00"
             },
             {
               "id": "p1777231503862",
@@ -234,11 +234,11 @@
       "maxRounds": 4,
       "standings": [
         {
-          "player": "jeyjeylight",
-          "points": 2.0
+          "player": "Karismatik49",
+          "points": 3.0
         },
         {
-          "player": "Karismatik49",
+          "player": "jeyjeylight",
           "points": 2.0
         },
         {
