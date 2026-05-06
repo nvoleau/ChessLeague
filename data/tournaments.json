@@ -214,19 +214,19 @@
               "id": "p1777231503864",
               "white": "Gabinours",
               "black": "BaptistePDFA",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "1-0",
+              "gameUrl": "https://lichess.org/0kdkvdbN",
+              "completedAt": "2026-05-06T16:58:37.355402+00:00"
             },
             {
               "id": "p1777231503865",
               "white": "Maximuspleinlecus",
               "black": "Jujules85",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/TGpjN7v6",
+              "completedAt": "2026-05-06T16:58:38.643595+00:00"
             }
           ]
         }
@@ -250,6 +250,10 @@
           "points": 2.0
         },
         {
+          "player": "Gabinours",
+          "points": 2.0
+        },
+        {
           "player": "Azery49",
           "points": 1.0
         },
@@ -258,7 +262,7 @@
           "points": 1.0
         },
         {
-          "player": "Gabinours",
+          "player": "Jujules85",
           "points": 1.0
         },
         {
@@ -267,10 +271,6 @@
         },
         {
           "player": "Maximuspleinlecus",
-          "points": 0.0
-        },
-        {
-          "player": "Jujules85",
           "points": 0.0
         }
       ]
