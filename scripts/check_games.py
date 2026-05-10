@@ -7,10 +7,12 @@ Checks pending pairings against Lichess API and updates results.
 
 import json
 import os
+import random
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 import requests
 
@@ -96,7 +98,7 @@ def match_time_control(game: dict, clock_initial: int, clock_increment: int) -> 
     )
 
 
-def extract_result(game: dict, white_player: str) -> str | None:
+def extract_result(game: dict, white_player: str) -> Optional[str]:
     """Extract result from a game object relative to the white player."""
     winner = game.get("winner")
     status = game.get("status", "")
@@ -117,7 +119,7 @@ def extract_result(game: dict, white_player: str) -> str | None:
         return "0.5-0.5"
 
 
-def fetch_game_by_id(game_id: str) -> dict | None:
+def fetch_game_by_id(game_id: str) -> Optional[dict]:
     """Fetch a single game directly by its Lichess ID."""
     url = f"{LICHESS_API}/game/export/{game_id}"
     headers = {**HEADERS, "Accept": "application/json"}
@@ -190,6 +192,137 @@ def check_pairing(pairing: dict, round_created_at: str, clock_initial: int, cloc
     return False
 
 
+def swiss_scores(players, existing_rounds):
+    sc = {p.lower(): 0.0 for p in players}
+    for r in existing_rounds:
+        for p in r.get("pairings", []):
+            if p["status"] != "played":
+                continue
+            if p.get("black") == "BYE":
+                sc[p["white"].lower()] = sc.get(p["white"].lower(), 0) + 1.0
+                continue
+            w, b = p["white"].lower(), p["black"].lower()
+            if p.get("result") == "1-0":
+                sc[w] = sc.get(w, 0) + 1.0
+            elif p.get("result") == "0-1":
+                sc[b] = sc.get(b, 0) + 1.0
+            elif p.get("result") == "0.5-0.5":
+                sc[w] = sc.get(w, 0) + 0.5
+                sc[b] = sc.get(b, 0) + 0.5
+    return sc
+
+
+def played_pairs(existing_rounds):
+    pairs = set()
+    for r in existing_rounds:
+        for p in r.get("pairings", []):
+            if p.get("black") != "BYE":
+                key = "|".join(sorted([p["white"].lower(), p["black"].lower()]))
+                pairs.add(key)
+    return pairs
+
+
+def bye_players(existing_rounds):
+    byes = set()
+    for r in existing_rounds:
+        for p in r.get("pairings", []):
+            if p.get("black") == "BYE":
+                byes.add(p["white"].lower())
+    return byes
+
+
+def color_counts(players, existing_rounds):
+    counts = {p.lower(): {"white": 0, "black": 0} for p in players}
+    for r in existing_rounds:
+        for p in r.get("pairings", []):
+            if p.get("black") == "BYE":
+                continue
+            w, b = p["white"].lower(), p["black"].lower()
+            if w in counts:
+                counts[w]["white"] += 1
+            if b in counts:
+                counts[b]["black"] += 1
+    return counts
+
+
+def generate_round(round_id, players, existing_rounds):
+    counts = color_counts(players, existing_rounds)
+    is_first = len(existing_rounds) == 0
+
+    if is_first:
+        sorted_players = players[:]
+        random.shuffle(sorted_players)
+    else:
+        sc = swiss_scores(players, existing_rounds)
+        sorted_players = sorted(players, key=lambda p: (-sc.get(p.lower(), 0), random.random()))
+
+    # Bye for odd count
+    bye_player = None
+    active = sorted_players[:]
+    if len(sorted_players) % 2 != 0:
+        had_bye = bye_players(existing_rounds)
+        bye_player = next(
+            (p for p in reversed(sorted_players) if p.lower() not in had_bye),
+            sorted_players[-1]
+        )
+        active = [p for p in sorted_players if p != bye_player]
+
+    # Greedy Swiss pairing (avoid rematches)
+    already = set() if is_first else played_pairs(existing_rounds)
+    used = set()
+    pairs = []
+
+    for i in range(len(active)):
+        if i in used:
+            continue
+        j = -1
+        for k in range(i + 1, len(active)):
+            if k in used:
+                continue
+            key = "|".join(sorted([active[i].lower(), active[k].lower()]))
+            if key not in already:
+                j = k
+                break
+        if j == -1:  # fallback: allow rematch
+            for k in range(i + 1, len(active)):
+                if k not in used:
+                    j = k
+                    break
+        if j != -1:
+            used.add(i)
+            used.add(j)
+            pairs.append((active[i], active[j]))
+
+    pairings = []
+    now = datetime.now(timezone.utc).isoformat()
+
+    if bye_player:
+        pairings.append({
+            "id": f"p{int(time.time() * 1000)}bye",
+            "white": bye_player, "black": "BYE",
+            "status": "played", "result": "1-0",
+            "gameUrl": None, "completedAt": now,
+        })
+
+    for i, (a, b) in enumerate(pairs):
+        a_white = counts[a.lower()]["white"]
+        b_white = counts[b.lower()]["white"]
+        if a_white < b_white:
+            white, black = a, b
+        elif a_white > b_white:
+            white, black = b, a
+        else:
+            white, black = (a, b) if random.random() > 0.5 else (b, a)
+        pairings.append({
+            "id": f"p{int(time.time() * 1000) + i + 1}",
+            "white": white, "black": black,
+            "status": "pending", "result": None,
+            "gameUrl": None, "completedAt": None,
+        })
+
+    return {"id": round_id, "createdAt": now, "pairings": pairings}
+
+
 def update_standings(tournament: dict):
     """Recalculate standings from all played pairings."""
     players = tournament.get("players", [])
@@ -257,6 +390,26 @@ def main():
 
         # Update standings after scanning all rounds
         update_standings(tournament)
+
+        # Auto-generate next round if all pairings are played and rounds remain
+        max_rounds = tournament.get("maxRounds")
+        current_rounds = tournament.get("rounds", [])
+        all_played = all(
+            p["status"] == "played"
+            for r in current_rounds
+            for p in r.get("pairings", [])
+        )
+        can_add = (
+            all_played
+            and current_rounds
+            and (max_rounds is None or len(current_rounds) < max_rounds)
+        )
+        if can_add:
+            next_id = max((r["id"] for r in current_rounds), default=0) + 1
+            new_round = generate_round(next_id, tournament["players"], current_rounds)
+            tournament["rounds"].append(new_round)
+            print(f"  → Ronde {next_id} générée automatiquement ({len(new_round['pairings'])} appariements)")
+            changed = True
 
     if changed:
         save_data(data)
