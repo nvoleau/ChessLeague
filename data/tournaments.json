@@ -247,10 +247,10 @@
               "id": "p1778394068762",
               "white": "jeyjeylight",
               "black": "Gabinours",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/SuMUhMyM",
+              "completedAt": "2026-05-20T16:48:55.455054+00:00"
             },
             {
               "id": "p1778394068763",
@@ -293,15 +293,15 @@
           "points": 3.0
         },
         {
+          "player": "Gabinours",
+          "points": 3.0
+        },
+        {
           "player": "nicoinca",
           "points": 2.0
         },
         {
           "player": "jeyjeylight",
-          "points": 2.0
-        },
-        {
-          "player": "Gabinours",
           "points": 2.0
         },
         {
