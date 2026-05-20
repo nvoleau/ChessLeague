@@ -265,10 +265,10 @@
               "id": "p1778394068764",
               "white": "Yggdrasil-PdF",
               "black": "Jujules85",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0.5-0.5",
+              "gameUrl": "https://lichess.org/yv9Boro0",
+              "completedAt": "2026-05-20T19:16:51.039522+00:00"
             },
             {
               "id": "p1778394068765",
@@ -305,15 +305,15 @@
           "points": 2.0
         },
         {
-          "player": "Azery49",
-          "points": 1.0
-        },
-        {
           "player": "Yggdrasil-PdF",
-          "points": 1.0
+          "points": 1.5
         },
         {
           "player": "Jujules85",
+          "points": 1.5
+        },
+        {
+          "player": "Azery49",
           "points": 1.0
         },
         {
