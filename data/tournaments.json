@@ -256,10 +256,10 @@
               "id": "p1778394068763",
               "white": "Azery49",
               "black": "nicoinca",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "0-1",
+              "gameUrl": "https://lichess.org/",
+              "completedAt": "2026-06-01T16:48:55.455054+00:00"
             },
             {
               "id": "p1778394068764",
