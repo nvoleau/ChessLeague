@@ -274,10 +274,10 @@
               "id": "p1778394068765",
               "white": "BaptistePDFA",
               "black": "Maximuspleinlecus",
-              "status": "pending",
-              "result": null,
-              "gameUrl": null,
-              "completedAt": null
+              "status": "played",
+              "result": "1-0",
+              "gameUrl": "https://lichess.org/hQt43NdP",
+              "completedAt": "2026-06-05T19:14:51.257891+00:00"
             }
           ]
         }
@@ -289,15 +289,15 @@
           "points": 4.0
         },
         {
+          "player": "nicoinca",
+          "points": 3.0
+        },
+        {
           "player": "Chaballe",
           "points": 3.0
         },
         {
           "player": "Gabinours",
-          "points": 3.0
-        },
-        {
-          "player": "nicoinca",
           "points": 3.0
         },
         {
@@ -313,12 +313,12 @@
           "points": 1.5
         },
         {
-          "player": "Azery49",
+          "player": "BaptistePDFA",
           "points": 1.0
         },
         {
-          "player": "BaptistePDFA",
-          "points": 0.0
+          "player": "Azery49",
+          "points": 1.0
         },
         {
           "player": "Maximuspleinlecus",
